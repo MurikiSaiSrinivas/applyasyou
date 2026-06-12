@@ -1,0 +1,16 @@
+{
+  "__notes": "Copy this to profile.json and fill in your details. profile.json is GITIGNORED because it holds PII (phone, email, address). Never commit profile.json. Double-check `git status` does NOT list it before you push.",
+
+  "name": "<YOUR FULL NAME>",
+  "email": "<your.email@example.com>",
+  "phone": "<your phone>",
+  "location": "<YOUR CITY, STATE>",
+  "links": {
+    "linkedin": "<https://linkedin.com/in/you>",
+    "github": "<https://github.com/you>",
+    "portfolio": ""
+  },
+  "work_authorization": "<e.g. US citizen | green card | needs sponsorship>",
+  "open_to_relocation": false,
+  "target_titles": ["software engineer", "full stack engineer"]
+}

@@ -1,0 +1,2241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0c0e" />
+<title>Applications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     TOKENS
+  ============================================================ */
+  :root {
+    /* Warm-dark surface palette. Whites and blacks are barely-warm
+       (low chroma, hue 80) so the dark mode reads as paper-under-lamp
+       rather than blue-screen. */
+    --bg:        #0b0c0e;
+    --bg-1:     #111316;     /* card surface */
+    --bg-2:     #181b1f;     /* hovered / selected */
+    --bg-3:     #20242a;     /* expanded inner well */
+    --line:     #23272d;     /* hairline */
+    --line-2:   #2d3138;
+    --text:     oklch(0.93 0.005 80);   /* warm off-white */
+    --text-2:   oklch(0.74 0.008 80);   /* secondary */
+    --text-3:   oklch(0.55 0.008 80);   /* meta */
+    --text-4:   oklch(0.42 0.005 80);   /* faint */
+    --accent:   oklch(0.78 0.13 65);    /* warm amber, used sparingly */
+    --link:     oklch(0.80 0.10 230);   /* muted blue, for URLs */
+    --danger:   oklch(0.68 0.14 25);
+
+    /* Status hues at a shared lightness/chroma so the row stripes feel
+       like one palette. `applied` is intentionally NULL — no stripe. */
+    --s-applied:    transparent;
+    --s-drafted:    oklch(0.78 0.13 65);    /* warm amber — "ready to submit, awaiting human" */
+    --s-prospect:   oklch(0.72 0.12 175);
+    --s-recruiter:  oklch(0.74 0.12 235);
+    --s-oa:         oklch(0.78 0.13 85);
+    --s-phone:      oklch(0.76 0.12 200);
+    --s-onsite:     oklch(0.72 0.13 305);
+    --s-offer:      oklch(0.76 0.14 145);
+    --s-reject:     oklch(0.62 0.10 25);
+    --s-ghost:      oklch(0.48 0.02 80);
+    --s-withdrawn:  oklch(0.55 0.04 60);
+
+    /* Visa chip palette */
+    --v-yes:     oklch(0.76 0.14 145);
+    --v-likely:  oklch(0.78 0.12 120);
+    --v-medium:  oklch(0.78 0.13 85);
+    --v-low:     oklch(0.72 0.13 50);
+    --v-unknown: oklch(0.58 0.01 80);
+    --v-no:      oklch(0.62 0.12 25);
+
+    /* Reading column for prose. Capped so notes/next_action never
+       turn into a stretch on wide monitors. */
+    --read-w: 720px;
+
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+
+    --t-fast: 120ms cubic-bezier(.2,.7,.2,1);
+    --t-med:  220ms cubic-bezier(.2,.7,.2,1);
+  }
+
+  /* ============================================================
+     BASE
+  ============================================================ */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body {
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  ::selection { background: oklch(0.78 0.13 65 / 0.3); color: var(--text); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 2px; }
+  code, .mono {
+    font-family: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.88em;
+  }
+  code {
+    background: var(--bg-3);
+    color: var(--text-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  strong { color: var(--text); font-weight: 600; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+  /* ============================================================
+     APP SHELL
+  ============================================================ */
+  .app { max-width: 880px; margin: 0 auto; padding: 0 16px 80px; }
+  @media (min-width: 700px) { .app { padding: 0 24px 80px; } }
+
+  /* Sticky header — keeps tabs + search + filters reachable while scrolling */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: rgba(11, 12, 14, 0.92);
+    padding-top: env(safe-area-inset-top, 0);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 18px 0 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .title-block { display: flex; align-items: baseline; gap: 10px; }
+  .title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .pulse {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 oklch(0.78 0.13 65 / 0.6);
+    animation: pulse 2.4s ease-out infinite;
+    transform: translateY(-2px);
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 oklch(0.78 0.13 65 / 0.5); }
+    70% { box-shadow: 0 0 0 8px oklch(0.78 0.13 65 / 0); }
+    100% { box-shadow: 0 0 0 0 oklch(0.78 0.13 65 / 0); }
+  }
+  .header-stats {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-3);
+    letter-spacing: 0.02em;
+    text-align: right;
+  }
+  .header-stats b { color: var(--text-2); font-weight: 500; }
+
+  /* Sparkline of activity */
+  .spark-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0 6px;
+  }
+  .spark-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-4);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .sparkline {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 22px;
+  }
+  .sparkline .bar {
+    flex: 1;
+    background: var(--line-2);
+    border-radius: 1px;
+    min-height: 2px;
+    transition: background var(--t-fast);
+    position: relative;
+  }
+  .sparkline .bar.has { background: oklch(0.78 0.13 65 / 0.55); }
+  .sparkline .bar.today { background: var(--accent); }
+  .sparkline .bar.weekstart::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: -2px;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
+  .spark-axis {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Geist Mono', monospace;
+    font-size: 9.5px;
+    color: var(--text-4);
+    margin-top: 2px;
+    padding-left: 60px;
+  }
+  @media (max-width: 700px) { .spark-axis { padding-left: 50px; } }
+
+  /* ============================================================
+     TABS
+  ============================================================ */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 4px 0 0;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    position: relative;
+    padding: 12px 14px;
+    color: var(--text-3);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color var(--t-fast);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab:hover { color: var(--text-2); }
+  .tab .count {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--text-4);
+    background: var(--bg-2);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+  .tab.active { color: var(--text); }
+  .tab.active .count { color: var(--text-2); background: var(--bg-3); }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    inset: auto 8px -1px 8px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ============================================================
+     TOOLBAR (search / filters / sort)
+  ============================================================ */
+  .toolbar {
+    padding: 14px 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .search {
+    position: relative;
+    width: 100%;
+  }
+  .search input {
+    width: 100%;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    padding: 11px 12px 11px 38px;
+    border-radius: var(--r-md);
+    outline: none;
+    transition: border-color var(--t-fast), background var(--t-fast);
+    min-height: 44px;
+  }
+  .search input:focus { border-color: var(--text-4); background: var(--bg-2); }
+  .search input::placeholder { color: var(--text-4); }
+  .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-4); pointer-events: none;
+  }
+  .search-kbd {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    font-family: 'Geist Mono', monospace; font-size: 11px;
+    color: var(--text-4); border: 1px solid var(--line);
+    padding: 1px 5px; border-radius: 4px;
+  }
+  @media (max-width: 700px) { .search-kbd { display: none; } }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  @media (min-width: 700px) { .filters { margin: 0; padding: 0; } }
+  .chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    color: var(--text-2);
+    border-radius: 999px;
+    font-size: 13px;
+    min-height: 36px;
+    transition: all var(--t-fast);
+    white-space: nowrap;
+  }
+  .chip:hover { background: var(--bg-2); color: var(--text); }
+  .chip.active {
+    background: var(--bg-3);
+    border-color: var(--line-2);
+    color: var(--text);
+  }
+  .chip .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+  }
+  .chip .ct {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--text-4);
+    margin-left: 2px;
+  }
+  .chip.active .ct { color: var(--text-3); }
+
+  .toolbar-row2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 12.5px;
+    color: var(--text-3);
+    font-family: 'Geist Mono', monospace;
+  }
+  .toolbar-row2 .left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .toolbar-row2 .right { display: flex; align-items: center; gap: 6px; }
+
+  /* On narrow phones, stack into two clean rows of 2 buttons each.
+     Each button grows to fill its half so the toolbar looks balanced
+     instead of leaving the right pair stranded. */
+  @media (max-width: 520px) {
+    .toolbar-row2 {
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .toolbar-row2 .left,
+    .toolbar-row2 .right {
+      width: 100%;
+      gap: 8px;
+    }
+    .toolbar-row2 .right { justify-content: flex-start; }
+    .toolbar-row2 .menu-wrap {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .toolbar-row2 .select-btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .result-count {
+      flex-basis: 100%;
+      order: 99;
+      text-align: left;
+      font-size: 11.5px;
+      padding: 2px 2px 0;
+    }
+  }
+  .select-btn {
+    color: var(--text-2);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    transition: background var(--t-fast), border-color var(--t-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    min-height: 36px;
+  }
+  .select-btn:hover { background: var(--bg-2); color: var(--text); border-color: var(--line-2); }
+  .select-btn.has-value {
+    border-color: color-mix(in oklab, var(--accent) 30%, var(--line-2));
+    background: color-mix(in oklab, var(--accent) 8%, var(--bg-1));
+  }
+  .select-btn .sel-key {
+    color: var(--text-4);
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    text-transform: lowercase;
+  }
+  .select-btn .caret { color: var(--text-4); font-size: 10px; margin-left: 2px; }
+
+  .toolbar-row2 .left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .result-count { color: var(--text-3); }
+
+  /* ============================================================
+     ROW LIST
+  ============================================================ */
+  .list { display: flex; flex-direction: column; }
+  .group-header {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 22px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .group-header::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed var(--line);
+  }
+  .group-header .gct { color: var(--text-4); }
+
+  .row {
+    position: relative;
+    display: block;
+    padding: 18px 14px 18px 18px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background var(--t-fast);
+    scroll-margin-top: 120px;
+  }
+  .row:hover { background: var(--bg-1); }
+  .row.expanded { background: var(--bg-1); cursor: default; }
+  .row.selected { background: var(--bg-1); }
+  .row:focus-visible { outline: none; background: var(--bg-1); }
+  .row:focus-visible::after {
+    content: '';
+    position: absolute; inset: 0;
+    border: 1px solid var(--text-4);
+    border-radius: var(--r-sm);
+    pointer-events: none;
+  }
+  /* Status stripe — only renders for non-applied rows */
+  .row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 3px;
+    background: var(--stripe, transparent);
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Row header line */
+  .row-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .row-role {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .row-role .role-link {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--text-4);
+    padding-bottom: 1px;
+    transition: border-color var(--t-fast);
+  }
+  .row-role .role-link:hover { border-color: var(--accent); }
+  .row-role .ext {
+    font-size: 10px;
+    color: var(--text-4);
+    margin-left: 3px;
+    transform: translateY(-4px);
+    display: inline-block;
+  }
+  .row-sep { color: var(--text-4); margin: 0 2px; }
+  .row-company {
+    color: var(--text-2);
+    font-size: 14.5px;
+  }
+
+  /* Row meta line (location · visa · dates) */
+  .row-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-3);
+    font-size: 12.5px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+  .row-meta .dot {
+    color: var(--line-2);
+    user-select: none;
+  }
+  .row-meta .when {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Status pill */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: 'Geist Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    color: var(--pill-fg, var(--text-2));
+    background: var(--pill-bg, var(--bg-2));
+    border: 1px solid var(--pill-bd, var(--line));
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pill .pill-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--pill-fg, currentColor);
+  }
+
+  /* Visa chip */
+  .visa {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-family: 'Geist Mono', monospace;
+    border-radius: 4px;
+    color: var(--visa-fg);
+    background: color-mix(in oklab, var(--visa-fg) 14%, transparent);
+    border: 1px solid color-mix(in oklab, var(--visa-fg) 22%, transparent);
+  }
+  .visa .vk { color: var(--text-4); font-weight: 400; }
+
+  /* Next action preview line (compact, single line) */
+  .row-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--text-2);
+    font-size: 13.5px;
+    line-height: 1.5;
+    padding-top: 2px;
+  }
+  .row-preview .arrow {
+    color: var(--accent);
+    margin-right: 6px;
+    font-family: 'Geist Mono', monospace;
+  }
+  .row-preview strong { color: var(--text); }
+  .row.expanded .row-preview { display: none; }
+
+  /* ============================================================
+     EXPANDED PANEL
+  ============================================================ */
+  .row-detail {
+    display: none;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    animation: detailIn var(--t-med);
+  }
+  .row.expanded .row-detail { display: block; }
+  @keyframes detailIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .row-detail .section + .section { margin-top: 18px; }
+  .section-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-4);
+    margin-bottom: 6px;
+  }
+  .section-body {
+    color: var(--text);
+    font-size: 14.5px;
+    line-height: 1.6;
+    max-width: var(--read-w);
+  }
+  .section-body p { margin: 0 0 0.7em; }
+  .section-body p:last-child { margin-bottom: 0; }
+  .section-body.next-action {
+    background: oklch(0.78 0.13 65 / 0.06);
+    border: 1px solid oklch(0.78 0.13 65 / 0.18);
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+  }
+
+  /* Company parenthetical, only shown expanded */
+  .company-context {
+    color: var(--text-3);
+    font-size: 13px;
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  /* Footer of row when expanded */
+  .row-footer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+    color: var(--text-3);
+    font-size: 12px;
+    font-family: 'Geist Mono', monospace;
+  }
+  .row-footer .resume-name { color: var(--text-2); }
+  .row-footer a { color: var(--link); }
+  .row-action {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+  }
+  .icon-btn {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    transition: all var(--t-fast);
+    border: 1px solid var(--line);
+    background: var(--bg);
+  }
+  .icon-btn:hover { background: var(--bg-2); color: var(--text); border-color: var(--line-2); }
+
+  /* ============================================================
+     EMPTY / ERROR STATES
+  ============================================================ */
+  .empty {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 14px;
+  }
+  .empty .icon {
+    font-family: 'Geist Mono', monospace;
+    color: var(--text-4);
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .empty button {
+    margin-top: 12px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text-2);
+  }
+  .empty button:hover { background: var(--bg-1); color: var(--text); }
+
+  /* ============================================================
+     POPOVER MENU (sort, group-by)
+  ============================================================ */
+  .popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-1);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    min-width: 180px;
+    z-index: 40;
+    overflow: hidden;
+    animation: popIn var(--t-fast);
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .popover-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    color: var(--text-2);
+    font-size: 13px;
+    text-align: left;
+    transition: background var(--t-fast);
+  }
+  .popover-item:hover { background: var(--bg-2); color: var(--text); }
+  .popover-item.selected { color: var(--text); }
+  .popover-item .check {
+    color: var(--accent);
+    width: 14px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+  }
+  .popover-item .pop-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .popover-item .pop-ct {
+    margin-left: auto;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--text-4);
+  }
+  .popover-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 4px 0;
+  }
+  .menu-wrap { position: relative; }
+
+  /* ============================================================
+     FOCUS MODE OVERLAY
+  ============================================================ */
+  .focus-overlay {
+    position: fixed; inset: 0;
+    background: rgba(11, 12, 14, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    animation: focusIn var(--t-med);
+  }
+  @keyframes focusIn { from { opacity: 0; } to { opacity: 1; } }
+  .focus-bar {
+    position: sticky; top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    background: linear-gradient(to bottom, var(--bg), var(--bg) 70%, transparent);
+    z-index: 2;
+  }
+  .focus-bar .left, .focus-bar .right { display: flex; align-items: center; gap: 6px; }
+  .focus-bar .nav-info {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-3);
+    margin: 0 6px;
+  }
+  .focus-content {
+    flex: 1;
+    padding: 8px 20px 80px;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .focus-role {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .focus-company {
+    color: var(--text-2);
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+  .focus-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--text-3);
+    font-size: 13px;
+    margin: 16px 0 28px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .focus-section { margin-bottom: 28px; }
+  .focus-section .section-label { font-size: 11.5px; margin-bottom: 8px; }
+  .focus-section .section-body {
+    font-size: 16px;
+    line-height: 1.65;
+    max-width: 100%;
+  }
+
+  /* ============================================================
+     WATCHLIST / CLOSED variants — slightly different row shapes
+  ============================================================ */
+  .row.watchlist .row-head .id-tag,
+  .row.closed .row-head .id-tag {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--text-4);
+    margin-right: 4px;
+  }
+  .outcome-tag {
+    display: inline-flex;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-family: 'Geist Mono', monospace;
+    border-radius: 4px;
+    background: var(--bg-2);
+    color: var(--text-2);
+    border: 1px solid var(--line);
+  }
+  .outcome-tag.bad { color: var(--s-reject); border-color: color-mix(in oklab, var(--s-reject) 30%, var(--line)); background: color-mix(in oklab, var(--s-reject) 10%, var(--bg-2)); }
+  .outcome-tag.neutral { color: var(--text-2); }
+  .outcome-tag.good { color: var(--s-offer); border-color: color-mix(in oklab, var(--s-offer) 30%, var(--line)); }
+
+  /* ============================================================
+     SCROLL-TO-TOP / KEYBOARD HINT
+  ============================================================ */
+  .kbd-hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 14px;
+    background: var(--bg-1);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--t-med);
+  }
+  .kbd-hint.show { opacity: 1; }
+  .kbd-hint kbd {
+    background: var(--bg-3);
+    color: var(--text-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    margin: 0 2px;
+  }
+
+  /* loading skeletons */
+  .skel { padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .skel-bar {
+    background: linear-gradient(90deg, var(--bg-1), var(--bg-2), var(--bg-1));
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+    border-radius: 4px;
+    height: 12px;
+    margin-bottom: 8px;
+  }
+  @keyframes shimmer {
+    from { background-position: 100% 0; }
+    to   { background-position: -100% 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="title-block">
+        <span class="pulse" aria-hidden="true"></span>
+        <span class="title">Applications</span>
+      </div>
+      <div class="header-stats" id="header-stats"></div>
+    </div>
+    <div class="spark-wrap" id="spark-wrap">
+      <span class="spark-label">30d activity</span>
+      <div class="sparkline" id="sparkline" title="Each bar = number of applications touched on that day (last 30 days, ending today)"></div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+
+    <section class="toolbar" id="toolbar">
+      <div class="search">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="search" placeholder="Search company, role, location, notes…" autocomplete="off" />
+        <span class="search-kbd">/</span>
+      </div>
+      <div class="toolbar-row2">
+        <div class="left">
+          <div class="menu-wrap" id="status-wrap">
+            <button class="select-btn" id="status-btn"><span class="sel-key">status</span><span id="status-label">any</span><span class="caret">▾</span></button>
+          </div>
+          <div class="menu-wrap" id="visa-wrap">
+            <button class="select-btn" id="visa-btn"><span class="sel-key">visa</span><span id="visa-label">any</span><span class="caret">▾</span></button>
+          </div>
+          <span class="result-count" id="result-count"></span>
+        </div>
+        <div class="right">
+          <div class="menu-wrap">
+            <button class="select-btn" id="group-btn"><span id="group-label">flat</span><span class="caret">▾</span></button>
+          </div>
+          <div class="menu-wrap">
+            <button class="select-btn" id="sort-btn"><span id="sort-label">last touch</span><span class="caret">▾</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </header>
+
+  <main class="list" id="list" role="list"></main>
+
+</div>
+
+<div class="kbd-hint" id="kbd-hint">
+  <kbd>/</kbd> search · <kbd>j</kbd>/<kbd>k</kbd> nav · <kbd>x</kbd> expand · <kbd>f</kbd> focus · <kbd>?</kbd> help
+</div>
+
+<div id="focus-mount"></div>
+
+<script>
+/* ============================================================
+   TINY MARKDOWN — handles **bold**, `code`, [text](url), bare URLs,
+   newlines → <br>. Escapes HTML first. ~12 lines.
+============================================================ */
+function md(s) {
+  if (!s) return '';
+  // escape
+  let h = String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // [text](url)
+  h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  // bare URLs (avoid double-wrapping those already in <a>)
+  h = h.replace(/(^|[^"=>])(https?:\/\/[^\s<)]+)/g,
+    '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+  // **bold**
+  h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // `code`
+  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // double newline → paragraph; single → <br>
+  const paras = h.split(/\n{2,}/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>');
+  return paras.join('');
+}
+
+/* Plain-text strip for compact preview (one line) */
+function mdInline(s) {
+  if (!s) return '';
+  let h = String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1');
+  h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+  h = h.replace(/\s*\n+\s*/g, ' · ');
+  return h;
+}
+
+/* Extract first URL from a free-form link field */
+function extractUrl(s) {
+  if (!s) return null;
+  const md = s.match(/\[[^\]]+\]\((https?:\/\/[^\s)]+)\)/);
+  if (md) return md[1];
+  const bare = s.match(/https?:\/\/[^\s)]+/);
+  if (bare) return bare[0];
+  return null;
+}
+
+/* Visa normalization: leading-word classifier
+   ("**No** (...)", "Medium (...)", "Low to medium ...", "Good (...)", etc.),
+   with prose fallbacks for free-form entries. */
+function normVisa(s) {
+  if (!s) return 'Unknown';
+  const head = String(s).replace(/^[\s*]+/, '').toLowerCase().slice(0, 40);
+  if (/^no\b|^n\/a\b/.test(head)) return 'No';
+  if (/^yes\b/.test(head)) return 'Yes';
+  if (/^good\b/.test(head)) return 'Yes';
+  if (/^medium to good\b/.test(head)) return 'Likely';
+  if (/^likely\b/.test(head)) return 'Likely';
+  if (/^low to medium\b/.test(head)) return 'Medium';
+  if (/^medium\b/.test(head)) return 'Medium';
+  if (/^low\b/.test(head)) return 'Low';
+  if (/^unknown\b/.test(head)) return 'Unknown';
+  if (/^open question\b|^contract\b/.test(head)) return 'Unknown';
+  const t = String(s).toLowerCase();
+  if (/\bno sponsorship|do not sponsor|cannot sponsor|won'?t sponsor|sponsorship (is )?not available/.test(t)) return 'No';
+  if (/h-?1b history|hires? internationally|sponsor visas globally|happy to sponsor|will sort visa/.test(t)) return 'Yes';
+  if (/(actively |currently )?sponsor(s|ing)?\b/.test(t)) return 'Yes';
+  if (/might sponsor|may sponsor|case by case/.test(t)) return 'Medium';
+  if (/unlikely|limited sponsorship/.test(t)) return 'Low';
+  if (/not declared|unclear|not specified|surface visa|ask in/.test(t)) return 'Unknown';
+  return 'Unknown';
+}
+
+const VISA_ORDER = ['Yes','Likely','Medium','Low','Unknown','No'];
+const VISA_VAR = {
+  Yes: 'var(--v-yes)', Likely: 'var(--v-likely)', Medium: 'var(--v-medium)',
+  Low: 'var(--v-low)', Unknown: 'var(--v-unknown)', No: 'var(--v-no)'
+};
+
+/* Strip the parenthetical context from company string for compact display */
+function companyShort(s) {
+  if (!s) return '';
+  const i = s.indexOf('(');
+  return i > 0 ? s.slice(0, i).trim() : s.trim();
+}
+function companyContext(s) {
+  if (!s) return '';
+  const i = s.indexOf('(');
+  if (i < 0) return '';
+  return s.slice(i).trim();
+}
+
+/* Relative date helper */
+function relDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const now = new Date();
+  const days = Math.round((now - d) / 86400000);
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + 'd ago';
+  if (days < 30) return Math.round(days / 7) + 'w ago';
+  if (days < 365) return Math.round(days / 30) + 'mo ago';
+  return Math.round(days / 365) + 'y ago';
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+function daysBetween(a, b) {
+  if (!a || !b) return 0;
+  const da = new Date(a), db = new Date(b);
+  if (isNaN(da) || isNaN(db)) return 0;
+  return Math.abs(Math.round((db - da) / 86400000));
+}
+
+/* ============================================================
+   STATUS METADATA
+============================================================ */
+const STATUS = {
+  drafted:   { label: 'drafted',   stripe: 'var(--s-drafted)',    priority: 5.5 },
+  applied:   { label: 'applied',   stripe: null,                  priority: 5 },
+  prospect:  { label: 'prospect',  stripe: 'var(--s-prospect)',   priority: 6 },
+  recruiter: { label: 'recruiter', stripe: 'var(--s-recruiter)',  priority: 4 },
+  oa:        { label: 'OA',        stripe: 'var(--s-oa)',         priority: 3 },
+  phone:     { label: 'phone',     stripe: 'var(--s-phone)',      priority: 2 },
+  onsite:    { label: 'onsite',    stripe: 'var(--s-onsite)',     priority: 1 },
+  offer:     { label: 'offer',     stripe: 'var(--s-offer)',      priority: 0 },
+  reject:    { label: 'reject',    stripe: 'var(--s-reject)',     priority: 7 },
+  ghost:     { label: 'ghost',     stripe: 'var(--s-ghost)',      priority: 8 },
+  withdrawn: { label: 'withdrawn', stripe: 'var(--s-withdrawn)',  priority: 9 }
+};
+function statusMeta(s) {
+  return STATUS[s] || { label: s, stripe: null, priority: 99 };
+}
+
+/* ============================================================
+   STATE
+============================================================ */
+const state = {
+  tab: 'active',        // active | watchlist | closed
+  data: { active: null, watchlist: null, closed: null },
+  err:  { active: null, watchlist: null, closed: null },
+  search: '',
+  statusFilter: new Set(),  // empty = all
+  visaFilter: new Set(),
+  sort: 'last_touch',       // last_touch | applied_desc | applied_asc | status | company
+  group: 'none',            // none | status
+  expanded: new Set(),      // set of row keys
+  selected: null,           // row key for keyboard nav
+  focus: null,              // { tab, id } in focus mode
+  sinkUp: false             // localhost:8765 reachable? Drives edit-button visibility.
+};
+
+/* ============================================================
+   SINK API (mutations against localhost:8765)
+   Edit buttons only render when state.sinkUp is true.
+============================================================ */
+const SINK_BASE = 'http://127.0.0.1:8765';
+
+async function checkSink() {
+  try {
+    const res = await fetch(SINK_BASE + '/status', { cache: 'no-cache', signal: AbortSignal.timeout(800) });
+    state.sinkUp = res.ok;
+  } catch { state.sinkUp = false; }
+}
+
+async function apiLogApplied(prospectId) {
+  const res = await fetch(SINK_BASE + '/api/active/log_applied', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prospect_id: prospectId })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+  return body;
+}
+
+async function apiDumpProspect(prospectId) {
+  const res = await fetch(SINK_BASE + '/api/prospect/update', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: prospectId, fields: { state: 'skip' } })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+  return body;
+}
+
+function toast(msg, kind = 'ok') {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 16px;border-radius:8px;font-size:13px;font-family:inherit;z-index:10000;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:opacity .3s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = kind === 'error' ? 'oklch(0.30 0.10 25)' : 'oklch(0.30 0.10 145)';
+  el.style.color = '#fff';
+  el.style.border = '1px solid ' + (kind === 'error' ? 'oklch(0.55 0.14 25)' : 'oklch(0.55 0.13 145)');
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+
+const SORT_OPTIONS = [
+  { k: 'last_touch',   label: 'last touch' },
+  { k: 'applied_desc', label: 'applied — newest' },
+  { k: 'applied_asc',  label: 'applied — oldest' },
+  { k: 'status',       label: 'status priority' },
+  { k: 'company',      label: 'company a–z' }
+];
+const SORT_OPTIONS_PROSPECTS = [
+  { k: 'match_desc',   label: 'match % — high to low' },
+  { k: 'match_asc',    label: 'match % — low to high' },
+  { k: 'posted_desc',  label: 'posted — newest' },
+  { k: 'posted_asc',   label: 'posted — oldest' },
+  { k: 'company',      label: 'company a–z' }
+];
+function sortOptionsForTab() {
+  return state.tab === 'prospects' ? SORT_OPTIONS_PROSPECTS : SORT_OPTIONS;
+}
+const GROUP_OPTIONS = [
+  { k: 'none',   label: 'flat' },
+  { k: 'status', label: 'group by status' }
+];
+
+const STATUS_FILTER_OPTIONS = [
+  'drafted','recruiter','oa','phone','onsite','offer','applied','prospect','reject','ghost','withdrawn'
+];
+
+/* ============================================================
+   DATA LOAD
+============================================================ */
+async function loadAll() {
+  // Best-effort: probe the sink so edit buttons appear when it's up.
+  // Non-blocking failure -> state.sinkUp stays false, viewer stays read-only.
+  await checkSink();
+  const tabs = ['active','watchlist','closed'];
+  await Promise.all(tabs.map(async t => {
+    try {
+      const res = await fetch('../data/' + t + '.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      state.data[t] = await res.json();
+    } catch (e) {
+      state.err[t] = e.message || String(e);
+      state.data[t] = [];
+    }
+  }));
+  // Strip markdown bold (`**prospect**` → `prospect`) so statusMeta + filters match
+  (state.data.active || []).forEach(r => {
+    if (r.status) r.status = String(r.status).replace(/\*+/g, '').trim().toLowerCase();
+  });
+
+  // Prospects tab: join prospects.json (with inline .analysis) + jd_cache.json,
+  // show only verdict in {apply, maybe}. Skipped/dumped/applied stay hidden.
+  // As of 2026-05-27 analysis lives inline on each prospect row; the old
+  // data/prospects/analyses.json was deprecated and is no longer fetched.
+  try {
+    const [pRes, cRes] = await Promise.all([
+      fetch('../data/prospects/prospects.json', { cache: 'no-cache' }),
+      fetch('../data/prospects/jd_cache.json',  { cache: 'no-cache' })
+    ]);
+    const prospects = pRes.ok ? await pRes.json() : [];
+    const cache = cRes.ok ? await cRes.json() : {};
+    const rows = [];
+    prospects.forEach(p => {
+      // Hide applied/skip/dumped — they live in active.json (or were rejected)
+      // and shouldn't resurface in the triage queue.
+      if (p.state === 'applied' || p.state === 'skip' || p.state === 'dumped') return;
+      const a = p.analysis || null;
+      if (!a) return;
+      if (!(a.verdict === 'apply' || a.verdict === 'maybe')) return;
+      const ce = cache[String(p.id)] || {};
+      // Source-of-truth chain for the "ats" / source-name label shown in
+      // the row meta: prefer the actual ATS from jd_cache (greenhouse,
+      // ashby, jobright, wellfound for fetched JDs). Fall back to the
+      // prospect's own `sources` array so rows without a cached JD still
+      // show their origin consistently (e.g., a wellfound prospect with no
+      // JD yet still shows "wellfound" instead of nothing).
+      const ats = ce.ats || (Array.isArray(p.sources) && p.sources[0]) || '';
+      rows.push({
+        id:          p.id,
+        company:     p.company,
+        role:        p.role,
+        location:    p.location,
+        date_posted: p.date_posted,
+        link:        p.link,
+        ats,
+        jd_text:     ce.jd_text || '',
+        verdict:     a.verdict,
+        match_pct:   a.match_pct,
+        resume:      a.resume,
+        visa_signal: a.visa_signal,
+        notes:       a.notes,
+        source:      a.source,
+        analyzed_at: a.analyzed_at
+      });
+    });
+    state.data.prospects = rows;
+
+    // Active tab: enrich each row that has `_prospect_id` with the cached JD +
+    // analysis notes from the inline prospect.analysis. Lets the Active expand
+    // view show the JD without duplicating it into active.json.
+    const byId = Object.fromEntries(prospects.map(p => [String(p.id), p]));
+    (state.data.active || []).forEach(r => {
+      const pid = r._prospect_id;
+      if (pid == null) return;
+      const ce = cache[String(pid)] || {};
+      const p  = byId[String(pid)];
+      const a  = p && p.analysis;
+      if (ce.jd_text)               r._jd_text   = ce.jd_text;
+      if (ce.ats)                   r._jd_ats    = ce.ats;
+      if (a && a.notes)             r._analysis  = a.notes;
+      if (a && a.match_pct != null) r._match_pct = a.match_pct;
+    });
+  } catch (e) {
+    state.err.prospects = e.message || String(e);
+    state.data.prospects = [];
+  }
+
+  renderAll();
+}
+
+/* ============================================================
+   FILTER + SORT
+============================================================ */
+function filterRows(rows) {
+  const q = state.search.trim().toLowerCase();
+  return rows.filter(r => {
+    if (state.tab === 'active') {
+      if (state.statusFilter.size && !state.statusFilter.has(r.status)) return false;
+      if (state.visaFilter.size && !state.visaFilter.has(normVisa(r.visa))) return false;
+    }
+    if (!q) return true;
+    // substring across whole row
+    return Object.values(r).some(v => v != null && String(v).toLowerCase().includes(q));
+  });
+}
+
+function sortRows(rows) {
+  const arr = [...rows];
+  switch (state.sort) {
+    case 'last_touch':
+      arr.sort((a,b) => (b.last_touch || b.date || '').localeCompare(a.last_touch || a.date || ''));
+      break;
+    case 'applied_desc':
+      arr.sort((a,b) => (b.date_applied || b.date || '').localeCompare(a.date_applied || a.date || ''));
+      break;
+    case 'applied_asc':
+      arr.sort((a,b) => (a.date_applied || a.date || '').localeCompare(b.date_applied || b.date || ''));
+      break;
+    case 'status':
+      arr.sort((a,b) => {
+        const sa = statusMeta(a.status).priority;
+        const sb = statusMeta(b.status).priority;
+        if (sa !== sb) return sa - sb;
+        return (b.last_touch || '').localeCompare(a.last_touch || '');
+      });
+      break;
+    case 'company':
+      arr.sort((a,b) => companyShort(a.company).localeCompare(companyShort(b.company)));
+      break;
+    case 'match_desc':
+      arr.sort((a,b) => (b.match_pct ?? -1) - (a.match_pct ?? -1));
+      break;
+    case 'match_asc':
+      arr.sort((a,b) => (a.match_pct ?? 101) - (b.match_pct ?? 101));
+      break;
+    case 'posted_desc':
+      arr.sort((a,b) => (b.date_posted || '').localeCompare(a.date_posted || ''));
+      break;
+    case 'posted_asc':
+      arr.sort((a,b) => (a.date_posted || '').localeCompare(b.date_posted || ''));
+      break;
+  }
+  return arr;
+}
+
+function groupRows(rows) {
+  if (state.group !== 'status' || state.tab !== 'active') return [{ key: null, rows }];
+  const groups = {};
+  rows.forEach(r => {
+    const k = r.status || 'applied';
+    (groups[k] = groups[k] || []).push(r);
+  });
+  // Order by status priority
+  const order = Object.keys(groups).sort((a,b) => statusMeta(a).priority - statusMeta(b).priority);
+  return order.map(k => ({ key: k, rows: groups[k] }));
+}
+
+/* ============================================================
+   RENDERING
+============================================================ */
+const $ = (id) => document.getElementById(id);
+
+function renderAll() {
+  renderTabs();
+  renderHeaderStats();
+  renderSparkline();
+  renderToolbar();
+  renderList();
+}
+
+function renderTabs() {
+  const tabs = [
+    { k: 'active', label: 'Active', count: (state.data.active || []).length },
+    { k: 'watchlist', label: 'Watchlist', count: (state.data.watchlist || []).length },
+    { k: 'closed', label: 'Closed', count: (state.data.closed || []).length },
+    { k: 'prospects', label: 'Prospects', count: (state.data.prospects || []).length }
+  ];
+  $('tabs').innerHTML = tabs.map(t => `
+    <button class="tab ${t.k === state.tab ? 'active' : ''}" data-tab="${t.k}" role="tab" aria-selected="${t.k === state.tab}">
+      ${t.label}<span class="count">${t.count}</span>
+    </button>
+  `).join('');
+  $('tabs').querySelectorAll('.tab').forEach(b => {
+    b.onclick = () => {
+      state.tab = b.dataset.tab;
+      state.expanded.clear(); state.selected = null;
+      // Reset sort to a tab-valid default if the current key isn't in the tab's options
+      const opts = sortOptionsForTab();
+      if (!opts.some(o => o.k === state.sort)) state.sort = opts[0].k;
+      renderAll(); window.scrollTo({top: 0}); updateHash();
+    };
+  });
+}
+
+function renderHeaderStats() {
+  const rows = state.data[state.tab] || [];
+  let parts = [];
+  if (state.tab === 'active') {
+    const inProgress = rows.filter(r => !['applied','drafted','ghost','withdrawn','reject'].includes(r.status)).length;
+    const drafted = rows.filter(r => r.status === 'drafted').length;
+    const offers = rows.filter(r => r.status === 'offer').length;
+    const today = new Date().toISOString().slice(0,10);
+    const touchedToday = rows.filter(r => r.last_touch === today).length;
+    parts.push(`<b>${rows.length}</b> total`);
+    parts.push(`<b>${inProgress}</b> in progress`);
+    if (drafted) parts.push(`<b>${drafted}</b> drafted (review + submit)`);
+    if (offers) parts.push(`<b>${offers}</b> offer${offers>1?'s':''}`);
+    if (touchedToday) parts.push(`<b>${touchedToday}</b> today`);
+  } else if (state.tab === 'watchlist') {
+    parts.push(`<b>${rows.length}</b> watching`);
+  } else if (state.tab === 'prospects') {
+    const ai = rows.filter(r => r.source === 'claude').length;
+    const auto = rows.filter(r => r.source === 'heuristic').length;
+    const apply = rows.filter(r => r.verdict === 'apply').length;
+    const maybe = rows.filter(r => r.verdict === 'maybe').length;
+    parts.push(`<b>${rows.length}</b> actionable`);
+    if (ai)   parts.push(`<b>${ai}</b> ✓ AI-reviewed`);
+    if (auto) parts.push(`<b>${auto}</b> AUTO (heuristic — review!)`);
+    if (apply) parts.push(`<b>${apply}</b> apply`);
+    if (maybe) parts.push(`<b>${maybe}</b> maybe`);
+  } else {
+    const rejected = rows.filter(r => /reject/i.test(r.outcome || '')).length;
+    parts.push(`<b>${rows.length}</b> closed`);
+    if (rejected) parts.push(`<b>${rejected}</b> rejected`);
+  }
+  $('header-stats').innerHTML = parts.join(' &nbsp;·&nbsp; ');
+}
+
+function renderSparkline() {
+  const wrap = $('spark-wrap');
+  const el = $('sparkline');
+  if (state.tab !== 'active') { el.innerHTML = ''; wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const rows = state.data.active || [];
+  const days = 30;
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const dayKey = (s) => {
+    if (!s) return null;
+    const dt = new Date(s);
+    if (isNaN(dt)) return null;
+    dt.setHours(0,0,0,0);
+    return Math.floor((today - dt) / 86400000);
+  };
+
+  // Per-day buckets: 'applied' = first submission on that day; 'touched' =
+  // status change on a row whose date_applied was earlier (recruiter ping, etc.)
+  const appliedBuckets = Array.from({length: days}, () => []);
+  const touchedBuckets = Array.from({length: days}, () => []);
+  rows.forEach(r => {
+    const tk = dayKey(r.last_touch);
+    if (tk == null || tk < 0 || tk >= days) return;
+    const ak = dayKey(r.date_applied);
+    const slot = days - 1 - tk;
+    const company = companyShort(r.company) || r.company || '?';
+    if (ak === tk) appliedBuckets[slot].push(company);
+    else touchedBuckets[slot].push(company);
+  });
+
+  const counts = appliedBuckets.map((a, i) => a.length + touchedBuckets[i].length);
+  const max = Math.max(1, ...counts);
+
+  el.innerHTML = counts.map((c, i) => {
+    const daysAgo = days - 1 - i;
+    const h = c === 0 ? 2 : 2 + Math.round((c / max) * 18);
+    const isToday = i === days - 1;
+    const isWeekStart = daysAgo > 0 && daysAgo % 7 === 0;
+    const cls = isToday && c > 0 ? 'today' : (c > 0 ? 'has' : '');
+    const wk = isWeekStart ? ' weekstart' : '';
+    const dt = new Date(today); dt.setDate(today.getDate() - daysAgo);
+    const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const label = daysAgo === 0 ? 'today' : daysAgo === 1 ? 'yesterday' : daysAgo + 'd ago';
+    const applied = appliedBuckets[i];
+    const touched = touchedBuckets[i];
+    const parts = [`${dateStr} (${label})`];
+    if (applied.length) parts.push(`${applied.length} applied: ${applied.join(', ')}`);
+    if (touched.length) parts.push(`${touched.length} touched: ${touched.join(', ')}`);
+    if (!applied.length && !touched.length) parts.push('no activity');
+    return `<div class="bar ${cls}${wk}" style="height:${h}px" title="${escape(parts.join(' · '))}"></div>`;
+  }).join('');
+}
+
+function renderToolbar() {
+  // Status + visa filters only on Active. Search visible everywhere.
+  const isActive = state.tab === 'active';
+  $('status-wrap').style.display = isActive ? '' : 'none';
+  $('visa-wrap').style.display   = isActive ? '' : 'none';
+  if (isActive) updateFilterLabels();
+  $('result-count').textContent = '';
+
+  // Sort + group labels
+  const sopts = sortOptionsForTab();
+  $('sort-label').textContent = (sopts.find(o => o.k === state.sort) || sopts[0]).label;
+  $('group-label').textContent = (GROUP_OPTIONS.find(o => o.k === state.group) || GROUP_OPTIONS[0]).label;
+  // Group toggle only on active — hide the wrapper so it doesn't claim flex space
+  $('group-btn').closest('.menu-wrap').style.display = isActive ? '' : 'none';
+}
+
+function updateFilterLabels() {
+  const sn = state.statusFilter.size;
+  const vn = state.visaFilter.size;
+  const sBtn = $('status-btn'), vBtn = $('visa-btn');
+  if (sn === 0) { $('status-label').textContent = 'any'; sBtn.classList.remove('has-value'); }
+  else if (sn === 1) { $('status-label').textContent = statusMeta([...state.statusFilter][0]).label; sBtn.classList.add('has-value'); }
+  else { $('status-label').textContent = sn + ' selected'; sBtn.classList.add('has-value'); }
+
+  if (vn === 0) { $('visa-label').textContent = 'any'; vBtn.classList.remove('has-value'); }
+  else if (vn === 1) { $('visa-label').textContent = [...state.visaFilter][0]; vBtn.classList.add('has-value'); }
+  else { $('visa-label').textContent = vn + ' selected'; vBtn.classList.add('has-value'); }
+}
+
+function openStatusMenu(anchor) {
+  const rows = state.data.active || [];
+  const counts = {};
+  rows.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+  const items = [{ k: '__all', label: 'any status', ct: rows.length, color: 'var(--text-3)' }, '__div'];
+  STATUS_FILTER_OPTIONS.forEach(s => {
+    if (!counts[s]) return;
+    const m = statusMeta(s);
+    items.push({ k: s, label: m.label, ct: counts[s], color: m.stripe || 'var(--text-3)' });
+  });
+  openMultiMenu(anchor, items, state.statusFilter, () => {
+    updateFilterLabels(); renderList();
+  });
+}
+
+function openVisaMenu(anchor) {
+  const rows = state.data.active || [];
+  const vcounts = {};
+  rows.forEach(r => { const v = normVisa(r.visa); vcounts[v] = (vcounts[v] || 0) + 1; });
+  const items = [{ k: '__all', label: 'any visa', ct: rows.length, color: 'var(--text-3)' }, '__div'];
+  VISA_ORDER.forEach(v => {
+    if (!vcounts[v]) return;
+    items.push({ k: v, label: v, ct: vcounts[v], color: VISA_VAR[v] });
+  });
+  openMultiMenu(anchor, items, state.visaFilter, () => {
+    updateFilterLabels(); renderList();
+  });
+}
+
+function openMultiMenu(anchor, items, selectedSet, onChange) {
+  closePop();
+  const pop = document.createElement('div');
+  pop.className = 'popover';
+  pop.style.minWidth = '210px';
+  // anchor on the LEFT for left-side menus
+  pop.style.right = 'auto';
+  pop.style.left = '0';
+  pop.innerHTML = items.map(it => {
+    if (it === '__div') return '<div class="popover-divider"></div>';
+    const isAll = it.k === '__all';
+    const isOn = isAll ? selectedSet.size === 0 : selectedSet.has(it.k);
+    return `<button class="popover-item ${isOn ? 'selected' : ''}" data-k="${it.k}">
+      <span class="check">${isOn ? '✓' : ''}</span>
+      ${isAll ? '' : `<span class="pop-dot" style="background:${it.color}"></span>`}
+      <span>${it.label}</span>
+      <span class="pop-ct">${it.ct}</span>
+    </button>`;
+  }).join('');
+  anchor.parentElement.appendChild(pop);
+  pop.querySelectorAll('.popover-item').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const k = b.dataset.k;
+      if (k === '__all') selectedSet.clear();
+      else {
+        if (selectedSet.has(k)) selectedSet.delete(k);
+        else selectedSet.add(k);
+      }
+      onChange();
+      // Re-render the menu state in place
+      pop.querySelectorAll('.popover-item').forEach(bb => {
+        const kk = bb.dataset.k;
+        const on = kk === '__all' ? selectedSet.size === 0 : selectedSet.has(kk);
+        bb.classList.toggle('selected', on);
+        bb.querySelector('.check').textContent = on ? '✓' : '';
+      });
+    };
+  });
+  openPop = pop;
+  setTimeout(() => {
+    document.addEventListener('click', outsideClose, { once: true });
+  }, 0);
+}
+
+/* ============================================================
+   LIST RENDER (dispatches to active / watchlist / closed)
+============================================================ */
+function renderList() {
+  const list = $('list');
+  const tab = state.tab;
+  const raw = state.data[tab];
+
+  if (raw == null) {
+    list.innerHTML = Array(4).fill(0).map(() => `
+      <div class="skel">
+        <div class="skel-bar" style="width:40%"></div>
+        <div class="skel-bar" style="width:70%"></div>
+        <div class="skel-bar" style="width:55%"></div>
+      </div>`).join('');
+    return;
+  }
+  if (state.err[tab]) {
+    list.innerHTML = `
+      <div class="empty">
+        <div class="icon">[ × ]</div>
+        Couldn't load <span class="mono">${tab}.json</span>.<br>
+        <span style="color:var(--text-4);font-family:'Geist Mono',monospace;font-size:12px">${state.err[tab]}</span>
+        <br><button onclick="loadAll()">retry</button>
+      </div>`;
+    return;
+  }
+
+  const filtered = filterRows(raw);
+  const sorted = sortRows(filtered);
+  const groups = groupRows(sorted);
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="icon">[ — ]</div>No matches.</div>`;
+    $('result-count').textContent = '0 of ' + raw.length;
+    return;
+  }
+  $('result-count').textContent = filtered.length === raw.length
+    ? raw.length + ' rows'
+    : filtered.length + ' of ' + raw.length;
+
+  const html = groups.map(g => {
+    let inner = '';
+    if (g.key) {
+      const meta = statusMeta(g.key);
+      const color = meta.stripe || 'var(--text-3)';
+      inner += `<div class="group-header" style="color:${color}">${meta.label}<span class="gct">${g.rows.length}</span></div>`;
+    }
+    inner += g.rows.map(r => renderRow(r)).join('');
+    return inner;
+  }).join('');
+
+  list.innerHTML = html;
+
+  // wire up row events (delegation would also work)
+  list.querySelectorAll('.row').forEach(el => {
+    el.addEventListener('click', onRowClick);
+    el.addEventListener('keydown', onRowKey);
+  });
+}
+
+function rowKey(r) { return state.tab + '-' + r.id; }
+
+/* ============================================================
+   ROW HTML — branches by tab
+============================================================ */
+function renderRow(r) {
+  const key = rowKey(r);
+  const expanded = state.expanded.has(key);
+  const selected = state.selected === key;
+
+  if (state.tab === 'active') return renderActiveRow(r, key, expanded, selected);
+  if (state.tab === 'watchlist') return renderWatchRow(r, key, expanded, selected);
+  if (state.tab === 'prospects') return renderProspectRow(r, key, expanded, selected);
+  return renderClosedRow(r, key, expanded, selected);
+}
+
+function renderProspectRow(r, key, expanded, selected) {
+  const url = extractUrl(r.link);
+  const company = companyShort(r.company);
+  const isApply = r.verdict === 'apply';
+  const isHeuristic = r.source === 'heuristic';
+  // Heuristic rows get muted/dim styling so reviewed (Claude) ones pop visually.
+  // Verdict color stays only for Claude-sourced rows.
+  const stripe = isHeuristic
+    ? 'var(--text-4)'
+    : (isApply ? 'var(--s-offer)' : 'var(--s-oa)');
+  const verdictPillBg = `color-mix(in oklab, ${stripe} 16%, var(--bg-1))`;
+  const verdictPillBd = `color-mix(in oklab, ${stripe} 25%, var(--line))`;
+
+  // Source badge: "AUTO" (heuristic OR not-yet-scored sources like wellfound)
+  // or "✓ AI" (claude-analyzed). Binary on purpose -- the loud third color
+  // for wellfound was noise; wellfound rows just need scoring (auto to ai)
+  // to be reclassified.
+  const sourceBadge = (r.source === 'claude')
+    ? `<span class="pill" style="--pill-bg:color-mix(in oklab, var(--s-offer) 16%, var(--bg-1));--pill-bd:color-mix(in oklab, var(--s-offer) 25%, var(--line));--pill-fg:var(--s-offer);font-size:10px;letter-spacing:.05em">✓ AI</span>`
+    : `<span class="pill" style="--pill-bg:color-mix(in oklab, var(--accent) 18%, var(--bg-1));--pill-bd:color-mix(in oklab, var(--accent) 30%, var(--line));--pill-fg:var(--accent);font-size:10px;letter-spacing:.05em">AUTO</span>`;
+
+  return `
+  <article class="row ${expanded ? 'expanded' : ''} ${selected ? 'selected' : ''}" data-key="${key}" data-id="${r.id}" tabindex="0" role="listitem" style="--stripe:${stripe}">
+    <div class="row-head">
+      ${sourceBadge}
+      <span class="pill" style="--pill-bg:${verdictPillBg};--pill-bd:${verdictPillBd};--pill-fg:${stripe}"><span class="pill-dot"></span>${r.verdict}${r.match_pct != null ? ' · ' + r.match_pct + '%' : ''}</span>
+      <span class="row-role">${
+        url
+          ? `<a class="role-link" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${escape(r.role)}<span class="ext">↗</span></a>`
+          : escape(r.role)
+      }</span>
+      <span class="row-sep">·</span>
+      <span class="row-company">${escape(company)}</span>
+    </div>
+    <div class="row-meta">
+      ${r.location ? `<span>${escape(r.location)}</span><span class="dot">·</span>` : ''}
+      ${r.visa_signal ? `<span class="visa" style="--visa-fg:var(--text-3)"><span class="vk">visa</span>${escape(r.visa_signal)}</span><span class="dot">·</span>` : ''}
+      <span class="when" title="posted ${fmtDate(r.date_posted)}">posted ${relDate(r.date_posted)}</span>
+      ${r.ats ? `<span class="dot">·</span><span class="when">${escape(r.ats)}</span>` : ''}
+      <span class="dot">·</span><span class="when" style="color:var(--text-4)" title="prospect id (use with log_app.py / skip_prospect.py)">p#${r.id}</span>
+    </div>
+    ${r.notes ? `<div class="row-preview"><span class="arrow">→</span>${mdInline(r.notes)}</div>` : ''}
+    ${expanded ? `
+      <div class="row-detail">
+        ${r.notes ? `<div class="section">
+          <div class="section-label">Verdict notes</div>
+          <div class="section-body">${md(r.notes)}</div>
+        </div>` : ''}
+        ${r.resume ? `<div class="section">
+          <div class="section-label">Suggested resume</div>
+          <div class="section-body">${md('`' + r.resume + '`')}</div>
+        </div>` : ''}
+        ${r.jd_text ? `<div class="section">
+          <div class="section-label">Job description (full)</div>
+          <div class="section-body" style="max-height:480px;overflow-y:auto;font-size:13px;white-space:pre-wrap;color:var(--text-2)">${escape(r.jd_text)}</div>
+        </div>` : ''}
+        <div class="row-footer">
+          <span>posted <span class="resume-name">${fmtDate(r.date_posted)}</span></span>
+          ${r.analyzed_at ? `<span>analyzed <span class="resume-name">${fmtDate(r.analyzed_at.slice(0,10))}</span></span>` : ''}
+          <span>source: <span class="resume-name">${r.source || '?'}</span></span>
+          <div class="row-action">
+            ${state.sinkUp ? `
+              <button class="icon-btn" data-action="log_applied" data-pid="${r.id}" title="Log applied (move to active.json + flip state)" style="padding:4px 10px;font-size:14px;font-weight:600;border-color:color-mix(in oklab, var(--s-offer) 40%, var(--line));color:var(--s-offer)">+</button>
+              <button class="icon-btn" data-action="dump" data-pid="${r.id}" title="Dump (flip prospect.state to skip)" style="padding:4px 10px;font-size:14px;font-weight:600;border-color:color-mix(in oklab, var(--danger) 40%, var(--line));color:var(--danger)">×</button>
+            ` : ''}
+            ${url ? `<a class="icon-btn" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="open posting">${iconExternal()}</a>` : ''}
+            <button class="icon-btn" data-action="focus" title="focus mode (f)">${iconExpand()}</button>
+          </div>
+        </div>
+      </div>` : ''}
+  </article>
+  `;
+}
+
+function renderActiveRow(r, key, expanded, selected) {
+  const meta = statusMeta(r.status);
+  const stripe = meta.stripe || 'transparent';
+  const visa = normVisa(r.visa);
+  const url = extractUrl(r.link);
+  const company = companyShort(r.company);
+  const ctx = companyContext(r.company);
+
+  const pillBg = meta.stripe
+    ? `color-mix(in oklab, ${meta.stripe} 16%, var(--bg-1))`
+    : 'var(--bg-2)';
+  const pillBd = meta.stripe
+    ? `color-mix(in oklab, ${meta.stripe} 25%, var(--line))`
+    : 'var(--line)';
+  const pillFg = meta.stripe || 'var(--text-2)';
+
+  return `
+  <article class="row ${expanded ? 'expanded' : ''} ${selected ? 'selected' : ''}" data-key="${key}" data-id="${r.id}" tabindex="0" role="listitem" style="--stripe:${stripe}">
+    <div class="row-head">
+      <span class="pill" style="--pill-bg:${pillBg};--pill-bd:${pillBd};--pill-fg:${pillFg}"><span class="pill-dot"></span>${meta.label}</span>
+      <span class="row-role">${
+        url
+          ? `<a class="role-link" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${escape(r.role)}<span class="ext">↗</span></a>`
+          : escape(r.role)
+      }</span>
+      <span class="row-sep">·</span>
+      <span class="row-company">${escape(company)}</span>
+    </div>
+    <div class="row-meta">
+      ${r.location ? `<span>${escape(r.location)}</span><span class="dot">·</span>` : ''}
+      <span class="visa" style="--visa-fg:${VISA_VAR[visa]}"><span class="vk">visa</span>${visa}</span>
+      <span class="dot">·</span>
+      <span class="when" title="applied ${fmtDate(r.date_applied)}">applied ${relDate(r.date_applied)}</span>
+      ${r.last_touch && r.last_touch !== r.date_applied && daysBetween(r.date_applied, r.last_touch) > 1
+        ? `<span class="dot">·</span><span class="when" title="last touch ${fmtDate(r.last_touch)}">touched ${relDate(r.last_touch)}</span>` : ''}
+    </div>
+    ${r.next_action ? `<div class="row-preview"><span class="arrow">→</span>${mdInline(r.next_action)}</div>` : ''}
+    ${expanded ? `
+      <div class="row-detail">
+        ${ctx ? `<div class="company-context">${escape(ctx)}</div>` : ''}
+        ${r.next_action ? `<div class="section">
+          <div class="section-label">Next action</div>
+          <div class="section-body next-action">${md(r.next_action)}</div>
+        </div>` : ''}
+        ${r.notes ? `<div class="section">
+          <div class="section-label">Notes</div>
+          <div class="section-body">${md(r.notes)}</div>
+        </div>` : ''}
+        ${r._analysis ? `<div class="section">
+          <div class="section-label">Verdict notes${r._match_pct != null ? ` · ${r._match_pct}% match` : ''}</div>
+          <div class="section-body">${md(r._analysis)}</div>
+        </div>` : ''}
+        <div class="row-footer">
+          <span>applied <span class="resume-name">${fmtDate(r.date_applied)}</span></span>
+          ${r.last_touch && r.last_touch !== r.date_applied ? `<span>last touch <span class="resume-name">${fmtDate(r.last_touch)}</span></span>` : ''}
+          ${r.resume ? `<span>resume: ${md(r.resume)}</span>` : ''}
+          ${r._jd_text ? `<span style="color:var(--text-4)">JD cached · press f for full text</span>` : ''}
+          ${r.link && !url ? `<span>${escape(r.link)}</span>` : ''}
+          <div class="row-action">
+            ${url ? `<a class="icon-btn" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="open posting">${iconExternal()}</a>` : ''}
+            <button class="icon-btn" data-action="focus" title="focus mode (f)">${iconExpand()}</button>
+          </div>
+        </div>
+      </div>` : ''}
+  </article>
+  `;
+}
+
+function renderWatchRow(r, key, expanded, selected) {
+  const url = extractUrl(r.link);
+  const company = companyShort(r.company);
+  const ctx = companyContext(r.company);
+  return `
+  <article class="row watchlist ${expanded ? 'expanded' : ''} ${selected ? 'selected' : ''}" data-key="${key}" data-id="${r.id}" tabindex="0" role="listitem" style="--stripe:var(--s-prospect)">
+    <div class="row-head">
+      <span class="id-tag mono">${r.id}</span>
+      <span class="row-role">${url
+        ? `<a class="role-link" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${escape(company)}<span class="ext">↗</span></a>`
+        : escape(company)}</span>
+    </div>
+    ${r.signal ? `<div class="row-preview"><span class="arrow">→</span>${mdInline(r.signal)}</div>` : ''}
+    ${expanded ? `
+      <div class="row-detail">
+        ${ctx ? `<div class="company-context">${escape(ctx)}</div>` : ''}
+        ${r.why ? `<div class="section"><div class="section-label">Why</div><div class="section-body">${md(r.why)}</div></div>` : ''}
+        ${r.signal ? `<div class="section"><div class="section-label">Signal</div><div class="section-body">${md(r.signal)}</div></div>` : ''}
+        ${r.check_back ? `<div class="section"><div class="section-label">Check back</div><div class="section-body next-action">${md(r.check_back)}</div></div>` : ''}
+        <div class="row-footer">
+          ${r.link && !url ? `<span>${escape(r.link)}</span>` : ''}
+          <div class="row-action">
+            ${url ? `<a class="icon-btn" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="open">${iconExternal()}</a>` : ''}
+            <button class="icon-btn" data-action="focus" title="focus mode">${iconExpand()}</button>
+          </div>
+        </div>
+      </div>` : ''}
+  </article>`;
+}
+
+function renderClosedRow(r, key, expanded, selected) {
+  const outcomeKind =
+    /reject|ghost/i.test(r.outcome || '') ? 'bad' :
+    /offer accept/i.test(r.outcome || '') ? 'good' : 'neutral';
+  return `
+  <article class="row closed ${expanded ? 'expanded' : ''} ${selected ? 'selected' : ''}" data-key="${key}" data-id="${r.id}" tabindex="0" role="listitem" style="--stripe:var(--s-ghost)">
+    <div class="row-head">
+      <span class="id-tag mono">${r.id}</span>
+      <span class="row-role">${escape(r.role)}</span>
+      <span class="row-sep">·</span>
+      <span class="row-company">${escape(r.company)}</span>
+    </div>
+    <div class="row-meta">
+      <span class="outcome-tag ${outcomeKind}">${escape(r.outcome || '')}</span>
+      <span class="dot">·</span>
+      <span class="when" title="${fmtDate(r.date)}">${relDate(r.date)}</span>
+    </div>
+    ${r.lessons ? `<div class="row-preview"><span class="arrow">→</span>${mdInline(r.lessons)}</div>` : ''}
+    ${expanded ? `
+      <div class="row-detail">
+        ${r.why ? `<div class="section"><div class="section-label">What happened</div><div class="section-body">${md(r.why)}</div></div>` : ''}
+        ${r.lessons ? `<div class="section"><div class="section-label">Lessons</div><div class="section-body next-action">${md(r.lessons)}</div></div>` : ''}
+        <div class="row-footer">
+          <span>${fmtDate(r.date)}</span>
+          <div class="row-action">
+            <button class="icon-btn" data-action="focus" title="focus mode">${iconExpand()}</button>
+          </div>
+        </div>
+      </div>` : ''}
+  </article>`;
+}
+
+function escape(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function iconExternal() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="m10 14 11-11"/></svg>`;
+}
+function iconExpand() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3h-6"/><path d="M21 3v6"/><path d="m21 3-7 7"/><path d="M3 21h6"/><path d="M3 21v-6"/><path d="m3 21 7-7"/></svg>`;
+}
+
+/* ============================================================
+   ROW INTERACTIONS
+============================================================ */
+function onRowClick(e) {
+  // ignore clicks on links / buttons inside
+  const action = e.target.closest('[data-action]');
+  if (action) {
+    e.stopPropagation();
+    if (action.dataset.action === 'focus') openFocus(this.dataset.key);
+    else if (action.dataset.action === 'log_applied') handleLogApplied(action);
+    else if (action.dataset.action === 'dump') handleDumpProspect(action);
+    return;
+  }
+  if (e.target.closest('a')) return;
+  toggleExpand(this.dataset.key);
+}
+
+async function handleLogApplied(btn) {
+  const pid = parseInt(btn.dataset.pid, 10);
+  if (!confirm(`Log p#${pid} as applied? Adds a new row to active.json and flips state to applied.`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await apiLogApplied(pid);
+    toast(`Logged active #${res.active_id} (p#${pid})`);
+    await loadAll();
+  } catch (e) {
+    toast(`Failed: ${e.message}`, 'error');
+    btn.disabled = false; btn.textContent = '+';
+  }
+}
+
+async function handleDumpProspect(btn) {
+  const pid = parseInt(btn.dataset.pid, 10);
+  if (!confirm(`Dump p#${pid}? Flips prospect state to skip (hides from queue).`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    await apiDumpProspect(pid);
+    toast(`Dumped p#${pid}`);
+    await loadAll();
+  } catch (e) {
+    toast(`Failed: ${e.message}`, 'error');
+    btn.disabled = false; btn.textContent = '×';
+  }
+}
+
+function toggleExpand(key) {
+  if (state.expanded.has(key)) state.expanded.delete(key);
+  else state.expanded.add(key);
+  state.selected = key;
+  renderList();
+  // scroll the row into view if it just expanded
+  if (state.expanded.has(key)) {
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.row[data-key="${CSS.escape(key)}"]`);
+      if (el) {
+        const top = el.getBoundingClientRect().top;
+        if (top < 110 || top > window.innerHeight - 100) {
+          window.scrollBy({ top: top - 110, behavior: 'smooth' });
+        }
+      }
+    });
+  }
+  updateHash();
+}
+
+function onRowKey(e) {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'x') {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleExpand(this.dataset.key);
+  } else if (e.key === 'f') {
+    e.preventDefault();
+    e.stopPropagation();
+    openFocus(this.dataset.key);
+  }
+}
+
+/* ============================================================
+   FOCUS MODE
+============================================================ */
+function openFocus(key) {
+  const [tab, ...rest] = key.split('-');
+  const id = rest.join('-');
+  state.focus = { tab, id };
+  renderFocus();
+  document.body.style.overflow = 'hidden';
+}
+function closeFocus() {
+  state.focus = null;
+  $('focus-mount').innerHTML = '';
+  document.body.style.overflow = '';
+  updateHash();
+}
+function currentVisibleRows() {
+  // rows that match current filter/sort (for focus prev/next nav)
+  const raw = state.data[state.tab] || [];
+  return sortRows(filterRows(raw));
+}
+function focusNav(dir) {
+  if (!state.focus) return;
+  const rows = (state.data[state.focus.tab] || []);
+  // For focus we navigate the same tab in filtered/sorted order
+  const sortedRows = state.focus.tab === state.tab ? currentVisibleRows() : rows;
+  const idx = sortedRows.findIndex(r => String(r.id) === String(state.focus.id));
+  const next = sortedRows[(idx + dir + sortedRows.length) % sortedRows.length];
+  if (next) {
+    state.focus.id = String(next.id);
+    renderFocus();
+  }
+}
+
+function renderFocus() {
+  if (!state.focus) { $('focus-mount').innerHTML = ''; return; }
+  const { tab, id } = state.focus;
+  const rows = state.data[tab] || [];
+  const r = rows.find(x => String(x.id) === String(id));
+  if (!r) { closeFocus(); return; }
+
+  const visible = tab === state.tab ? currentVisibleRows() : rows;
+  const idx = visible.findIndex(x => String(x.id) === String(id));
+  const total = visible.length;
+
+  let body = '';
+  if (tab === 'active') {
+    const meta = statusMeta(r.status);
+    const visa = normVisa(r.visa);
+    const url = extractUrl(r.link);
+    body = `
+      <div class="focus-role">${escape(r.role)}</div>
+      <div class="focus-company">${escape(companyShort(r.company))}${url ? ` <a href="${url}" target="_blank" rel="noopener noreferrer">↗</a>` : ''}</div>
+      ${companyContext(r.company) ? `<div class="company-context" style="margin-top:6px">${escape(companyContext(r.company))}</div>` : ''}
+      <div class="focus-meta">
+        <span class="pill" style="--pill-fg:${meta.stripe || 'var(--text-2)'};--pill-bg:color-mix(in oklab, ${meta.stripe || 'var(--bg-2)'} 16%, var(--bg-1));--pill-bd:color-mix(in oklab, ${meta.stripe || 'var(--line)'} 25%, var(--line))"><span class="pill-dot"></span>${meta.label}</span>
+        <span class="visa" style="--visa-fg:${VISA_VAR[visa]}"><span class="vk">visa</span>${visa}</span>
+        ${r.location ? `<span>· ${escape(r.location)}</span>` : ''}
+        <span>· applied ${fmtDate(r.date_applied)}</span>
+        ${r.last_touch && r.last_touch !== r.date_applied ? `<span>· touched ${fmtDate(r.last_touch)}</span>` : ''}
+        ${r.resume ? `<span>· resume: ${md(r.resume)}</span>` : ''}
+      </div>
+      ${r.next_action ? `<div class="focus-section"><div class="section-label">Next action</div><div class="section-body next-action">${md(r.next_action)}</div></div>` : ''}
+      ${r.notes ? `<div class="focus-section"><div class="section-label">Notes</div><div class="section-body">${md(r.notes)}</div></div>` : ''}
+      ${r._analysis ? `<div class="focus-section"><div class="section-label">Verdict notes${r._match_pct != null ? ` · ${r._match_pct}% match` : ''}</div><div class="section-body">${md(r._analysis)}</div></div>` : ''}
+      ${r._jd_text ? `<div class="focus-section"><div class="section-label">Job description (full)${r._jd_ats ? ` · ${escape(r._jd_ats)}` : ''}</div><div class="section-body" style="max-height:60vh;overflow-y:auto;white-space:pre-wrap;font-size:13px;color:var(--text-2)">${escape(r._jd_text)}</div></div>` : ''}
+    `;
+  } else if (tab === 'watchlist') {
+    const url = extractUrl(r.link);
+    body = `
+      <div class="focus-role">${escape(companyShort(r.company))}${url ? ` <a href="${url}" target="_blank" rel="noopener noreferrer">↗</a>` : ''}</div>
+      ${companyContext(r.company) ? `<div class="company-context" style="margin-top:6px">${escape(companyContext(r.company))}</div>` : ''}
+      <div class="focus-meta"><span class="mono" style="color:var(--text-4)">${escape(r.id)}</span></div>
+      ${r.why ? `<div class="focus-section"><div class="section-label">Why</div><div class="section-body">${md(r.why)}</div></div>` : ''}
+      ${r.signal ? `<div class="focus-section"><div class="section-label">Signal</div><div class="section-body">${md(r.signal)}</div></div>` : ''}
+      ${r.check_back ? `<div class="focus-section"><div class="section-label">Check back</div><div class="section-body next-action">${md(r.check_back)}</div></div>` : ''}
+    `;
+  } else {
+    const outcomeKind = /reject|ghost/i.test(r.outcome || '') ? 'bad' : /offer/i.test(r.outcome || '') ? 'good' : 'neutral';
+    body = `
+      <div class="focus-role">${escape(r.role)}</div>
+      <div class="focus-company">${escape(r.company)}</div>
+      <div class="focus-meta">
+        <span class="outcome-tag ${outcomeKind}">${escape(r.outcome || '')}</span>
+        <span>· ${fmtDate(r.date)}</span>
+      </div>
+      ${r.why ? `<div class="focus-section"><div class="section-label">What happened</div><div class="section-body">${md(r.why)}</div></div>` : ''}
+      ${r.lessons ? `<div class="focus-section"><div class="section-label">Lessons</div><div class="section-body next-action">${md(r.lessons)}</div></div>` : ''}
+    `;
+  }
+
+  $('focus-mount').innerHTML = `
+    <div class="focus-overlay" id="focus-overlay">
+      <div class="focus-bar">
+        <div class="left">
+          <button class="icon-btn" id="focus-close" title="close (esc)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          </button>
+          <span class="nav-info">${tab} · ${idx + 1} / ${total}</span>
+        </div>
+        <div class="right">
+          <button class="icon-btn" id="focus-prev" title="prev (←)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <button class="icon-btn" id="focus-next" title="next (→)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="focus-content">${body}</div>
+    </div>
+  `;
+  $('focus-close').onclick = closeFocus;
+  $('focus-prev').onclick = () => focusNav(-1);
+  $('focus-next').onclick = () => focusNav(1);
+  $('focus-overlay').addEventListener('click', (e) => {
+    if (e.target === $('focus-overlay')) closeFocus();
+  });
+  updateHash();
+}
+
+/* ============================================================
+   POPOVERS — sort + group
+============================================================ */
+let openPop = null;
+function closePop() {
+  if (openPop) { openPop.remove(); openPop = null; }
+}
+function popMenu(anchor, options, current, onPick) {
+  closePop();
+  const pop = document.createElement('div');
+  pop.className = 'popover';
+  pop.innerHTML = options.map(o => `
+    <button class="popover-item ${o.k === current ? 'selected' : ''}" data-k="${o.k}">
+      <span class="check">${o.k === current ? '✓' : ''}</span>${o.label}
+    </button>
+  `).join('');
+  anchor.parentElement.appendChild(pop);
+  pop.querySelectorAll('.popover-item').forEach(b => {
+    b.onclick = () => { onPick(b.dataset.k); closePop(); };
+  });
+  openPop = pop;
+  setTimeout(() => {
+    document.addEventListener('click', outsideClose, { once: true });
+  }, 0);
+}
+function outsideClose(e) {
+  if (openPop && !openPop.contains(e.target)) closePop();
+}
+
+/* ============================================================
+   HASH ROUTING — deep links
+   #active-63 / #watchlist-W1 / #closed-49 / #focus-active-63
+============================================================ */
+function updateHash() {
+  let h = state.tab;
+  if (state.focus) h = 'focus-' + state.focus.tab + '-' + state.focus.id;
+  else if (state.expanded.size === 1) {
+    const k = [...state.expanded][0];
+    const [t, ...rest] = k.split('-');
+    h = t + '-' + rest.join('-');
+  }
+  if (location.hash.slice(1) !== h) history.replaceState(null, '', '#' + h);
+}
+function readHash() {
+  const h = location.hash.slice(1);
+  if (!h) return;
+  if (h.startsWith('focus-')) {
+    const rest = h.slice('focus-'.length);
+    const i = rest.indexOf('-');
+    if (i > 0) {
+      const tab = rest.slice(0, i);
+      const id = rest.slice(i + 1);
+      if (['active','watchlist','closed'].includes(tab)) {
+        state.tab = tab;
+        state.focus = { tab, id };
+      }
+    }
+    return;
+  }
+  const i = h.indexOf('-');
+  if (i < 0) {
+    if (['active','watchlist','closed'].includes(h)) state.tab = h;
+    return;
+  }
+  const tab = h.slice(0, i);
+  const id = h.slice(i + 1);
+  if (['active','watchlist','closed'].includes(tab)) {
+    state.tab = tab;
+    state.expanded.add(tab + '-' + id);
+    state.selected = tab + '-' + id;
+  }
+}
+
+/* ============================================================
+   GLOBAL KEYBOARD
+============================================================ */
+function onGlobalKey(e) {
+  if (state.focus) {
+    if (e.key === 'Escape') { e.preventDefault(); closeFocus(); }
+    else if (e.key === 'ArrowRight' || e.key === 'j') { e.preventDefault(); focusNav(1); }
+    else if (e.key === 'ArrowLeft'  || e.key === 'k') { e.preventDefault(); focusNav(-1); }
+    return;
+  }
+  const tag = (e.target.tagName || '').toLowerCase();
+  const inField = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+
+  if (e.key === '/' && !inField) {
+    e.preventDefault();
+    $('search').focus();
+    $('search').select();
+    return;
+  }
+  if (e.key === 'Escape' && inField && tag === 'input') {
+    e.target.blur();
+    return;
+  }
+  if (inField) return;
+
+  if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); }
+  else if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); }
+  else if (e.key === 'x' || e.key === 'Enter') {
+    if (state.selected) { e.preventDefault(); toggleExpand(state.selected); }
+  }
+  else if (e.key === 'f') {
+    if (state.selected) { e.preventDefault(); openFocus(state.selected); }
+  }
+  else if (e.key === '?') {
+    e.preventDefault();
+    const hint = $('kbd-hint');
+    hint.classList.add('show');
+    setTimeout(() => hint.classList.remove('show'), 3000);
+  }
+  else if (e.key === '1') { state.tab = 'active'; renderAll(); }
+  else if (e.key === '2') { state.tab = 'watchlist'; renderAll(); }
+  else if (e.key === '3') { state.tab = 'closed'; renderAll(); }
+}
+
+function moveSel(dir) {
+  const rows = [...document.querySelectorAll('.row')];
+  if (!rows.length) return;
+  let idx = rows.findIndex(r => r.dataset.key === state.selected);
+  idx = idx < 0 ? (dir > 0 ? 0 : rows.length - 1) : idx + dir;
+  idx = Math.max(0, Math.min(rows.length - 1, idx));
+  const target = rows[idx];
+  state.selected = target.dataset.key;
+  rows.forEach(r => r.classList.remove('selected'));
+  target.classList.add('selected');
+  target.focus({ preventScroll: true });
+  const rect = target.getBoundingClientRect();
+  if (rect.top < 120 || rect.bottom > window.innerHeight - 60) {
+    window.scrollBy({ top: rect.top - 160, behavior: 'smooth' });
+  }
+}
+
+/* ============================================================
+   WIRE UP
+============================================================ */
+$('search').addEventListener('input', (e) => {
+  state.search = e.target.value;
+  renderList();
+});
+$('status-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openStatusMenu(e.currentTarget);
+});
+$('visa-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openVisaMenu(e.currentTarget);
+});
+$('sort-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  popMenu(e.currentTarget, sortOptionsForTab(), state.sort, (k) => {
+    state.sort = k; renderToolbar(); renderList();
+  });
+});
+$('group-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  popMenu(e.currentTarget, GROUP_OPTIONS, state.group, (k) => {
+    state.group = k; renderToolbar(); renderList();
+  });
+});
+document.addEventListener('keydown', onGlobalKey);
+window.addEventListener('hashchange', () => {
+  readHash();
+  if (state.focus) renderFocus();
+  renderAll();
+});
+
+/* ============================================================
+   BOOT
+============================================================ */
+readHash();
+renderAll();
+loadAll().then(() => {
+  if (state.focus) renderFocus();
+  // scroll to deep-linked row (#active-63 etc) once data has rendered
+  else if (state.expanded.size === 1) {
+    const key = [...state.expanded][0];
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.row[data-key="${CSS.escape(key)}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+  // briefly flash the kbd hint on desktop first load
+  if (window.innerWidth > 700) {
+    const hint = $('kbd-hint');
+    hint.classList.add('show');
+    setTimeout(() => hint.classList.remove('show'), 4000);
+  }
+});
+</script>
+
+</body>
+</html>

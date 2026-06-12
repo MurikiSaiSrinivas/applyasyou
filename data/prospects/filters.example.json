@@ -1,0 +1,92 @@
+{
+  "__notes": "Copy to filters.json and edit. Applied by scripts/fetch_prospects.py. Case-insensitive WORD-BOUNDARY substring on lowercased text. Multi-word keywords match literally ('full stack' won't match 'full-stack'; add both). Order: drop_flags -> role_exclude -> seniority_exclude -> role_include -> location. The role lists below are a generic SWE example; replace them for your field. The non_us_keywords / us_signals geography lists are reusable as-is unless you're searching outside the US.",
+
+  "current_location": "<YOUR CITY, STATE>",
+
+  "drop_flags": [
+    "citizenship_required",
+    "advanced_degree"
+  ],
+
+  "role_include": [
+    "software engineer",
+    "software developer",
+    "software development engineer",
+    "swe",
+    "sde",
+    "full stack",
+    "fullstack",
+    "full-stack",
+    "frontend",
+    "front-end",
+    "backend",
+    "back-end",
+    "web developer",
+    "product engineer",
+    "founding engineer",
+    "ai engineer",
+    "platform engineer",
+    "mobile engineer"
+  ],
+
+  "role_exclude": [
+    "hardware engineer",
+    "embedded engineer",
+    "firmware",
+    "mechanical engineer",
+    "electrical engineer",
+    "data scientist",
+    "research scientist",
+    "salesforce developer",
+    "qa engineer",
+    "test engineer",
+    "ux designer",
+    "product designer",
+    "product manager",
+    "program manager",
+    "scrum master",
+    "business analyst"
+  ],
+
+  "seniority_exclude": [
+    "staff engineer",
+    "principal engineer",
+    "distinguished engineer",
+    "engineering manager",
+    "director of engineering",
+    "vp of engineering",
+    "head of engineering",
+    "10+ years",
+    "8+ years"
+  ],
+
+  "non_us_keywords": [
+    "canada", "toronto", "vancouver", "montreal",
+    "india", "bengaluru", "bangalore", "hyderabad", "mumbai", "delhi", "pune", "chennai", "noida", "gurgaon",
+    "united kingdom", "london", "ireland", "dublin",
+    "germany", "berlin", "munich", "france", "paris", "spain", "madrid", "barcelona",
+    "netherlands", "amsterdam", "switzerland", "zurich", "poland", "warsaw",
+    "australia", "sydney", "melbourne", "singapore", "japan", "tokyo",
+    "china", "shanghai", "beijing", "hong kong", "israel", "tel aviv", "dubai"
+  ],
+
+  "us_signals": [
+    "united states", "usa", "u.s.", "us only", "us-based", "us based", "remote",
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+    "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+    "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana",
+    "maine", "maryland", "massachusetts", "michigan", "minnesota",
+    "mississippi", "missouri", "montana", "nebraska", "nevada",
+    "new hampshire", "new jersey", "new mexico", "new york",
+    "north carolina", "north dakota", "ohio", "oklahoma", "oregon",
+    "pennsylvania", "rhode island", "south carolina", "south dakota",
+    "tennessee", "texas", "utah", "vermont", "virginia", "washington",
+    "west virginia", "wisconsin", "wyoming", "district of columbia",
+    "nyc", "san francisco", "san jose", "palo alto", "mountain view",
+    "sunnyvale", "santa clara", "seattle", "redmond", "bellevue",
+    "los angeles", "boston", "austin", "atlanta", "denver", "chicago",
+    "miami", "philadelphia", "dallas", "houston", "phoenix"
+  ],
+
+  "grace_days": 7
+}

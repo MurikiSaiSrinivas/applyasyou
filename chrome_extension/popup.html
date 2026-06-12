@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg:       #f7f7f6;
+    --surface:  #ffffff;
+    --surface-2:#fafafa;
+    --line:     #e6e6e3;
+    --line-2:   #d8d8d4;
+    --text:     #1a1a1a;
+    --text-2:   #4a4a4a;
+    --text-3:   #888;
+    --text-4:   #a8a8a4;
+    --accent:   #1a73e8;
+    --accent-2: #1557b0;
+    --ok:       #137333;
+    --ok-bg:    #e7f7e7;
+    --err:      #c5221f;
+    --err-bg:   #fde8e7;
+    --warn:     #b86d00;
+    --warn-bg:  #fef3e2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    width: 380px;
+    margin: 0;
+    padding: 14px 14px 12px;
+    color: var(--text);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  h1 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin: 0 0 12px;
+  }
+  #mode-banner {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .mode-harvest  { background: #e6f0fb; color: #0d4f99; }
+  .mode-autofill { background: var(--ok-bg); color: var(--ok); }
+  .mode-other    { background: #ececea; color: var(--text-3); }
+  .panel {
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .panel h2 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12px;
+    margin-bottom: 4px;
+    gap: 8px;
+  }
+  .row:last-child { margin-bottom: 0; }
+  .row .k {
+    color: var(--text-3);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .row .v {
+    color: var(--text);
+    font-weight: 500;
+    text-align: right;
+    max-width: 240px;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+  button {
+    width: 100%;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--line-2);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 5px;
+    margin-top: 8px;
+    transition: background 80ms ease, border-color 80ms ease;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--text-4);
+  }
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  button.primary:hover:not(:disabled) {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+  }
+  button.secondary { /* default style is already secondary */ }
+  button + button { margin-top: 6px; }
+  .err  { color: var(--err) !important; }
+  .ok   { color: var(--ok) !important; }
+  .warn { color: var(--warn); }
+  #status {
+    font-size: 11px;
+    color: var(--text-2);
+    min-height: 18px;
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.45;
+  }
+  #status.ok   { background: var(--ok-bg);  border-color: #c4e6c4; }
+  #status.err  { background: var(--err-bg); border-color: #f5c2c0; }
+  #status.warn { background: var(--warn-bg); border-color: #f0d59c; }
+  .hidden { display: none; }
+  .count-pill {
+    display: inline-block;
+    min-width: 18px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--line);
+    color: var(--text-2);
+    border-radius: 10px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .count-pill.has { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+  <h1>Job Pipeline Companion</h1>
+  <div id="mode-banner" class="mode-other">…</div>
+
+  <!-- Sink status panel (always visible) -->
+  <div class="panel">
+    <h2>Sink (localhost:8765)</h2>
+    <div class="row"><span class="k">Status</span><span class="v" id="sinkStatus">…</span></div>
+  </div>
+
+  <!-- Harvest panel (Google Jobs) -->
+  <div id="panelHarvest" class="panel hidden">
+    <h2>Google Jobs harvest</h2>
+    <div class="row"><span class="k">Detected</span><span class="v" id="harvestCount">— jobs</span></div>
+    <div class="row"><span class="k">Strategy</span><span class="v" id="harvestStrategy">—</span></div>
+    <button id="harvestSend" class="primary">Send to local</button>
+  </div>
+
+  <!-- Wellfound recommendations scrape -->
+  <div id="panelWellfound" class="panel hidden">
+    <h2>Wellfound jobs scrape</h2>
+    <div class="row"><span class="k">Jobs on page</span><span class="v" id="wellfoundCount">—</span></div>
+    <div class="row"><span class="k">Pending JDs</span><span class="v"><span id="wellfoundPendingPill" class="count-pill">…</span></span></div>
+    <div class="row"><span class="k">JD fetch</span><span class="v" id="wellfoundJdProgress">—</span></div>
+    <button id="wellfoundScrape" class="primary">Scrape + fetch JDs</button>
+    <button id="wellfoundRetry" class="secondary hidden">Retry pending JDs</button>
+  </div>
+
+  <!-- LinkedIn post URL processor (always visible) -->
+  <div class="panel">
+    <h2>Process LinkedIn post URL</h2>
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:6px">
+      <input id="postUrlInput" type="text" placeholder="paste linkedin.com/posts/... or /feed/update/..."
+        style="width:100%;padding:6px 8px;font-size:11px;border:1px solid var(--line-2);border-radius:4px;font-family:inherit" />
+      <button id="postUrlProcess" class="primary">Process URL</button>
+    </div>
+    <div id="postUrlResult" class="hidden" style="margin-top:8px;font-size:11px;line-height:1.5">
+      <div id="postUrlIntent" style="font-weight:600;margin-bottom:4px"></div>
+      <div id="postUrlSummary" style="color:var(--text-2);margin-bottom:6px"></div>
+      <div id="postUrlActions"></div>
+    </div>
+  </div>
+
+  <!-- LinkedIn jobs scrape -->
+  <div id="panelLinkedin" class="panel hidden">
+    <h2>LinkedIn jobs scrape</h2>
+    <div class="row"><span class="k">Mode</span><span class="v" id="linkedinMode">—</span></div>
+    <div class="row"><span class="k">Jobs on page</span><span class="v" id="linkedinCount">—</span></div>
+    <div class="row"><span class="k">Pending JDs</span><span class="v"><span id="linkedinPendingPill" class="count-pill">…</span></span></div>
+    <div class="row"><span class="k">JD fetch</span><span class="v" id="linkedinJdProgress">—</span></div>
+    <button id="linkedinScrape" class="primary">Scrape + fetch JDs</button>
+    <button id="linkedinRetry" class="secondary hidden">Retry pending JDs</button>
+  </div>
+
+  <div id="status">Loading…</div>
+  <script src="popup.js"></script>
+</body>
+</html>

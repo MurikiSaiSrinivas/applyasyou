@@ -1,0 +1,49 @@
+# ============================================================
+# PRIVACY: these hold your personal data. Never commit them.
+# ============================================================
+config.json
+profile.json
+
+# Your operational data (applications, prospects, cached JDs).
+# The empty-state templates ARE committed; your live data is not.
+data/active.json
+data/closed.json
+data/watchlist.json
+data/prospects/prospects.json
+data/prospects/jd_cache.json
+data/prospects/meta.json
+data/prospects/drafted_answers.json
+data/prospects/tombstones.json
+data/prospects/fetch_history.json
+data/prospects/google_jobs_raw.json
+
+# Your resume files + generated variants (PII + personal content).
+resumes/
+!resumes/.gitkeep
+*.pdf
+*.docx
+*.content.md
+
+# First-run marker (per-user state).
+.onboarded
+
+# Docs the agent populates with YOUR data during onboarding (name, projects, voice,
+# resume content). They ship as empty seeds, then fill in. Tracked by default is
+# fine for a PRIVATE fork; uncomment to keep them out of git on a PUBLIC one.
+# CLAUDE.md
+# PROJECTS.md
+# master_prompt.txt
+# RESUME_DESCRIPTIONS.md
+# RESUME_CONTENT.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ============================================================
+# NOTE: the *.example.json and empty templates above are meant
+# to be committed. If you `git add -A`, confirm `git status`
+# does NOT show config.json or profile.json before pushing.
+# ============================================================

@@ -1,0 +1,85 @@
+{
+  "__notes": "Copy this to config.json and edit for yourself. config.json is gitignored. Everything user-specific lives here so you never touch code to make it yours. Matching everywhere is case-insensitive word-boundary substring on lowercased text.",
+
+  "llm_cli": {
+    "__notes": "How the AI steps (reanalyze, fill planner, post classifier) call an LLM. ANY LLM CLI works. The prompt is sent on stdin by default; set prompt_via to 'arg' to append it as the last argument instead. The script reads the model's reply from stdout.",
+    "command": "claude",
+    "args": ["-p"],
+    "prompt_via": "stdin",
+    "timeout_seconds": 300,
+    "examples": {
+      "claude_max": { "command": "claude", "args": ["-p"], "prompt_via": "stdin" },
+      "ollama_local": { "command": "ollama", "args": ["run", "llama3.1"], "prompt_via": "stdin" },
+      "openai_cli": { "command": "openai", "args": ["api", "chat.completions.create", "-m", "gpt-4o"], "prompt_via": "arg" }
+    }
+  },
+
+  "default_resume": "resumes/my_general_resume.pdf",
+
+  "resume_clusters": {
+    "__notes": "Maps a JD's dominant keyword cluster to which of YOUR resumes to use. Keys are paths to your resume files (relative to the package root). Values are the keywords that vote for that resume. Highest vote wins; ties fall back to default_resume. Replace these placeholder paths and keywords with your own corpus. Works with 1 resume (just one entry) or many.",
+    "resumes/my_general_resume.pdf": [
+      "react", "typescript", "node", "python", "full stack", "fullstack", "api"
+    ],
+    "resumes/my_frontend_resume.pdf": [
+      "design system", "component library", "tailwind", "accessibility", "wcag",
+      "frontend", "front-end", "ui"
+    ],
+    "resumes/my_backend_resume.pdf": [
+      "java", "spring boot", "authentication", "authorization", "jwt", "oauth",
+      "postgresql", "microservices"
+    ]
+  },
+
+  "stack_keywords": {
+    "__notes": "YOUR tech vocabulary, weighted. A JD's match_pct comes from summing the weights of the keywords it mentions. Higher weight = more central to your profile. This example is a generic full-stack set; replace it with your stack (a backend/data/PM/design person needs a totally different list). Format: keyword -> weight (1-5).",
+    "react": 5, "typescript": 5, "javascript": 4, "node.js": 4, "node": 3,
+    "next.js": 5, "express": 3,
+    "python": 4, "java": 3, "spring boot": 3, "c#": 3, ".net": 3,
+    "fastapi": 3, "flask": 2,
+    "postgresql": 3, "mongodb": 3, "mysql": 2, "redis": 2, "kafka": 2,
+    "aws": 4, "azure": 2, "docker": 3, "kubernetes": 2, "ci/cd": 2,
+    "llm": 4, "langchain": 4, "openai": 3, "rag": 3, "agent": 3,
+    "generative ai": 3, "ai-native": 5,
+    "jwt": 3, "oauth": 3, "rbac": 3, "authentication": 2, "authorization": 3,
+    "full stack": 3, "fullstack": 3, "full-stack": 3, "product engineer": 3,
+    "founding engineer": 3
+  },
+
+  "score_thresholds": {
+    "__notes": "match_pct cutoffs for the heuristic verdict. >= apply -> 'apply', >= maybe -> 'maybe', below -> 'skip'. 'normalizer' is the weight-sum that maps to ~100%: raise it if everything scores too high, lower it if everything scores too low. Tune after your first scrape.",
+    "apply": 65,
+    "maybe": 45,
+    "normalizer": 40
+  },
+
+  "llm_profile": {
+    "__notes": "Used only by reanalyze.py (the AI re-scoring step). Pasted into the LLM prompt so it can judge fit and pick a resume. Write your honest pitch and hard constraints; the more specific, the better the verdicts. resume_descriptions maps each resume from resume_clusters to a one-line 'use this when...'.",
+    "candidate_summary": "Full-stack software engineer, ~4 years experience. Stack: React, TypeScript, Next.js, Node.js, Python, PostgreSQL, AWS. Comfortable across frontend, backend, and basic AI/LLM integration. High-volume search; default lean is APPLY for anything in this stack umbrella.",
+    "work_authorization": "<e.g. US citizen, no sponsorship needed | needs H1B sponsorship>",
+    "hard_blockers": [
+      "Visa: US-citizen-only / security clearance / explicit 'no sponsorship' => skip",
+      "Stack: zero overlap (pure Ruby / Salesforce / SAP / mainframe) => skip"
+    ],
+    "soft_signals_note": "Mention but do NOT skip on: title mismatch, comp below target, relocation required. DO skip pure QA/SDET/support roles.",
+    "resume_descriptions": {
+      "resumes/my_general_resume.pdf": "Default. General full-stack: React/TS/Node + Python. Use for full-stack web, product, AI-tooling roles.",
+      "resumes/my_frontend_resume.pdf": "Frontend-heavy: design systems, component libraries, accessibility, rendering performance.",
+      "resumes/my_backend_resume.pdf": "Backend + auth/security: Java/Spring, JWT/OAuth/RBAC, microservices, authorization."
+    }
+  },
+
+  "github_sources": {
+    "__notes": "The job lists fetch_prospects.py pulls from. Defaults are SWE new-grad lists. A friend in a different field (PM, design, data) should swap these for relevant lists. Each entry: url (raw README) + parser ('md' for markdown tables, 'html' for an HTML <table> inside the README, as SimplifyJobs uses).",
+    "vanshb03": { "url": "https://raw.githubusercontent.com/vanshb03/New-Grad-2027/main/README.md", "parser": "md" },
+    "simplify": { "url": "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/README.md", "parser": "html" },
+    "jobright": { "url": "https://raw.githubusercontent.com/jobright-ai/2026-Software-Engineer-New-Grad/master/README.md", "parser": "md" }
+  },
+
+  "paths": {
+    "__notes": "Where the package reads/writes its operational data. Relative to the package root. You normally don't need to change these.",
+    "data_dir": "data",
+    "prospects_dir": "data/prospects",
+    "resumes_dir": "resumes"
+  }
+}
