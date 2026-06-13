@@ -83,6 +83,33 @@ Edit:
 - Job/project block imports (the variants you chose in step 3)
 - Project order (lead project first)
 
+#### Page margins -- the default is too loose
+
+The `resume_lib_v2.create_document()` defaults are:
+`top=0.5, bottom=0.5, left=0.75, right=0.75` (inches).
+
+The 0.75" side margins waste horizontal real estate. **Default to
+`left=0.5, right=0.5` for every new build script** so each line gets
+~0.5" more usable width. That extra width often means a bullet that
+wrapped to two lines now fits on one, which can be the difference
+between a 1-page resume fitting on 1 page and spilling to 2.
+
+In the build script:
+
+```python
+doc = create_document(left=0.5, right=0.5)
+```
+
+Only loosen back to 0.75 if the user explicitly asks for more
+whitespace, or if a specific employer's house style demands it
+(rare). Top/bottom can stay at 0.5; tightening those further risks
+the header/footer area looking cramped.
+
+If a tailor still overflows its page budget after switching to 0.5"
+margins, the right answer is to cut content, not to tighten margins
+below 0.5". Margins below 0.5" start looking unprofessional and ATS
+parsers occasionally choke on the edges.
+
 ### 6. Run the build script
 
 ```bash
