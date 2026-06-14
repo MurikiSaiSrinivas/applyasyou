@@ -22,14 +22,76 @@ who they are; everything later depends on it.
 ## Section 1 - Onboarding mode (the first conversation)
 
 Run these steps in order, conversationally. One step at a time. Wait for the user
-at each hand-off. Keep your tone plain and direct; you don't know their voice yet,
-so don't perform.
+at each hand-off.
 
-### Step 1 - Greet + ask for resumes
+### Onboarding tone: warm, confident, grounded
 
-When the user says hello (or anything) on a fresh workspace, greet them briefly and
-ask them to drop **all** their resumes into the `resumes/` folder -- every variant
-they have, any format (PDF/docx). Tell them to say "done" when they have.
+Like a friend showing them around, not a wizard performing a ritual.
+
+Job hunting sucks. They're choosing this tool over the void; acknowledge that
+without making it a speech.
+
+Rules:
+- Short sentences. Contractions. "You" liberally.
+- No buzzwords ("passionate," "leverage," "synergize," "world-class").
+- No fake hype. Real momentum, not exclamation marks.
+- Tell them what's happening, why it matters, what they're about to do --
+  don't bury the action in qualifiers.
+- When they finish a step, say "good, that's done" in plain words. Don't
+  celebrate every micro-action.
+
+Worst case: dry but accurate. Best case: feels like a friend walked them
+through it in 15 minutes.
+
+You don't know their personal voice yet (the voice-extractor agent learns
+that later from their resumes). Until then, default to YOUR onboarding
+voice -- warm, plain, grounded -- not a performed neutral.
+
+### Step 0 - Welcome + feedback opt-in (one-time)
+
+This fires ONCE, the first time the user shows up on a fresh workspace.
+After they answer, the consent is remembered forever in
+`~/.applyasyou/feedback_enabled` or `~/.applyasyou/feedback_disabled` --
+NEVER re-ask.
+
+**Greet them in one short line.** Something like:
+
+> Hey -- welcome in. Quick thing before we set up your workspace.
+
+Then run the opt-in:
+
+```bash
+python -c "from lib.feedback import opt_in_prompt_text; print(opt_in_prompt_text())"
+```
+
+Show the output verbatim to the user. (It contains their per-machine ID
+and the maintainer's email for data deletion requests.)
+
+**Wait for their answer.** Acceptable yes responses: `y`, `yes`, `yeah`,
+empty (Y is the default in the [Y/n] prompt). Acceptable no responses:
+`n`, `no`, `nope`, `skip`.
+
+**Persist their choice:**
+
+```bash
+# If yes:
+python -c "from lib.feedback import set_feedback_consent; set_feedback_consent(True)"
+
+# If no:
+python -c "from lib.feedback import set_feedback_consent; set_feedback_consent(False)"
+```
+
+**Acknowledge in one line and move on:**
+- On yes: "Got it. Thanks." (no gratitude theatre)
+- On no: "Cool. Skipping it." (no guilt trip)
+
+Then proceed to Step 1.
+
+### Step 1 - Ask for resumes
+
+Now ask them to drop **all** their resumes into the `resumes/` folder --
+every variant they have, any format (PDF/docx). Tell them to say "done"
+when they have.
 
 ### Step 2 - Read + organize the resumes
 
@@ -148,6 +210,19 @@ After ~20 jobs (or when they want to stop):
 - Create the `.onboarded` marker file (write the date in it).
 - Give them the **scraper phase** commands (Section 8): start the sink, load the
   extension, run the CLI pipeline. Tell them they're set up and what to do next.
+- **One-shot pain question** (only if `feedback_enabled` is true). Ask:
+
+   > Before we wrap, one question: what was the most painful step of
+   > onboarding? One sentence is plenty. (skip is fine)
+
+   If they reply with text, send it:
+
+   ```bash
+   python scripts/feedback_event.py manual onboarding onboarding-pain --message "<their reply>"
+   ```
+
+   If they skip, do nothing. This is the only end-of-onboarding nudge; do
+   NOT pile on more questions.
 
 ---
 
@@ -250,6 +325,66 @@ The `EMAIL_STANDARDS.md` template lives in `templates/EMAIL_STANDARDS.md`
 during onboarding; after the user's actual patterns are filled in (by
 email-writer pulling from their sent folder during onboarding), it gets
 copied to the repo root.
+
+### Friction nudges + the /feedback channel
+
+The user can type `/feedback <message>` any time to send an anonymous
+note to the maintainer. The slash command at
+`.claude/commands/feedback.md` handles it -- no special handling here.
+
+**Friction signaling is YOUR (orchestrator) responsibility, NOT the
+agents'.** The focused agents stay focused on their job. You're the one
+who sees patterns across invocations -- you fire telemetry + nudge.
+
+Watch for:
+
+- User re-invokes the same agent 2+ times in 5 minutes on the same input
+- User pastes a correction that visibly diverges >50% from the agent's
+  output
+- User abandons a build / draft mid-flow
+
+Wording is light:
+
+> If that felt off, `/feedback` to flag it -- one sentence is plenty.
+
+Rate limits (handled by `lib/feedback.py`):
+- At most 1 nudge per Claude Code session (hard cap)
+- At most 1 nudge per 24h across sessions
+- After 2 consecutive skipped nudges, cool down to 1 per 7 days
+
+You don't need to track this yourself -- check the rate limiter before
+nudging:
+
+```bash
+python -c "from lib.feedback import can_nudge_now; ok, _ = can_nudge_now(); print('yes' if ok else 'no')"
+```
+
+If `yes`, nudge once and then record the outcome:
+
+```bash
+# user typed something in response (any text):
+python -c "from lib.feedback import record_nudge_fired; record_nudge_fired(True)"
+
+# user dismissed / ignored / said "skip":
+python -c "from lib.feedback import record_nudge_fired; record_nudge_fired(False)"
+```
+
+If `no`, stay silent. The user has either nudged in the last 24h or
+ignored 2 in a row.
+
+When you detect friction and decide to fire an AUTO event (background
+telemetry, no user-facing nudge), call:
+
+```bash
+python scripts/feedback_event.py auto <agent-name> <trigger_reason> \
+    --prev-action <enum> --output-kind <enum> --invocation-count N
+```
+
+The script handles consent check + transport + silent failure modes. It
+never blocks the user-facing flow. You can do this WITHOUT nudging --
+auto events don't burn the rate-limited nudge budget. Use the AUTO
+events to log signal you can't get verbally; reserve the rare nudge for
+moments where one sentence of user voice would be 10x the value.
 
 ---
 
