@@ -11,6 +11,8 @@ Endpoints:
   POST /api/linkedin/jd                 -> LinkedIn pass 2 (HTML -> JD cache + auto-score)
   GET  /api/linkedin/pending_jds        -> linkedin rows still needing a JD
   POST /api/linkedin/process_post       -> classify a pasted LinkedIn post (LLM)
+  POST /api/active/log_applied          -> viewer 'I applied' button (dual-writes via lib.applications)
+  POST /api/prospect/update             -> viewer 'skip' / set state on a prospect row
   OPTIONS *                             -> CORS preflight
 
 Filtering uses lib.filters; auto-scoring uses lib.scoring; the post classifier
@@ -203,7 +205,58 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_jd("linkedin"); return
         if self.path == "/api/linkedin/process_post":
             self._handle_process_post(); return
+        if self.path == "/api/active/log_applied":
+            self._handle_log_applied(); return
+        if self.path == "/api/prospect/update":
+            self._handle_prospect_update(); return
         self._json(404, {"error": "not found"})
+
+    # ---------- applied / prospect mutation handlers ----------
+
+    def _handle_log_applied(self):
+        """Viewer 'I applied' button. Calls scripts/apply.py to do the
+        dual-write (active.json + prospects.json state flip).
+        """
+        payload = self._read_json_body()
+        if payload is None: return
+        prospect_id = payload.get("prospect_id")
+        if not isinstance(prospect_id, int):
+            self._json(400, {"error": "prospect_id (int) required"}); return
+        try:
+            # Delegate to the deterministic lib so the viewer button and
+            # the chat command share one source of truth.
+            from lib import applications  # PKG_ROOT is on sys.path already
+            result = applications.apply_with_prospect_id(prospect_id)
+            self._json(200, result)
+        except Exception as e:
+            self._json(500, {"error": str(e)})
+
+    def _handle_prospect_update(self):
+        """Viewer 'skip' / 'shortlist' / generic field-set on a prospect row.
+        Body: { id: <int>, fields: { state: 'skip', ... } }
+        """
+        payload = self._read_json_body()
+        if payload is None: return
+        pid = payload.get("id")
+        fields = payload.get("fields") or {}
+        if not isinstance(pid, int) or not isinstance(fields, dict):
+            self._json(400, {"error": "id (int) and fields (object) required"}); return
+        try:
+            prospects = load_json_file(PROSPECTS_PATH, [])
+            target = None
+            for r in prospects:
+                if r.get("id") == pid:
+                    target = r
+                    break
+            if target is None:
+                self._json(404, {"error": f"prospect id {pid} not found"}); return
+            for k, v in fields.items():
+                if k in {"state", "notes", "requires_tailor", "tailor_reason"}:
+                    target[k] = v
+            save_json_atomic(PROSPECTS_PATH, prospects)
+            self._json(200, {"status": "updated", "id": pid})
+        except Exception as e:
+            self._json(500, {"error": str(e)})
 
     # ---------- handlers ----------
     def _handle_status(self):

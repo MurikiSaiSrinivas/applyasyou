@@ -1,0 +1,20 @@
+{
+  "_note": "Tracks the last time the gmail-sweeper agent ran a Gmail sweep. Schema written here as a stub; the agent overwrites it on each successful run. The orchestrator's session-start nudge checks last_checked_at to decide if a sweep is overdue (default threshold: 2 days). The schema is set; values are placeholders until the first real sweep.",
+  "last_checked_at": null,
+  "lookback_days": 3,
+  "search_window": {
+    "from_date": null,
+    "to_date": null
+  },
+  "result_summary": {
+    "rejections_found": 0,
+    "rejections_logged": 0,
+    "matched_closed_ids": [],
+    "companies_rejected": [],
+    "application_receipts": 0,
+    "application_receipts_note": "",
+    "drafts_created": [],
+    "silent_thread_status": {},
+    "noise_pattern": ""
+  }
+}
